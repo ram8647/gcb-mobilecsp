@@ -406,6 +406,8 @@ def notify_module_enabled():
 
     dashboard.DashboardHandler.add_nav_mapping(TeacherHandler.ACTION, 'Teacher')
 
+    dashboard.DashboardHandler.add_sub_nav_mapping(TeacherHandler.ACTION, 'help', 'Documentation', 
+           href='https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY', target='_blank')
     dashboard.DashboardHandler.add_sub_nav_mapping(TeacherHandler.ACTION, 'sections', 'Sections', href='dashboard?action=teacher_dashboard&tab=')
     dashboard.DashboardHandler.add_sub_nav_mapping(TeacherHandler.ACTION, 'student_detail', 'Students', href='dashboard?action=teacher_dashboard&tab=student_detail' )
     dashboard.DashboardHandler.add_sub_nav_mapping(TeacherHandler.ACTION, 'teacher_reg', 'Teachers', href='dashboard?action=teacher_dashboard&tab=teacher_reg')

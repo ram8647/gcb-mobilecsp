@@ -31,6 +31,8 @@ import teacher_entity
 import teacher_rest_handlers
 import teacher_parsers
 
+from teacher_entity import Teacher
+
 #Setup paths and directories for templates and resources
 RESOURCES_PATH = '/modules/teacher_dashboard/resources'
 
@@ -148,7 +150,8 @@ class TeacherHandler(dashboard.DashboardHandler):
         #check to see if we have a student and if we need to get detailed progress
         student = None
         if student_email:
-            student = Student.get_by_email(student_email)
+            student = Teacher.get_student_by_email(student_email)
+#            student = Student.get_by_email(student_email)
 
         if (student):
             course = self.get_course()
@@ -215,16 +218,21 @@ class TeacherHandler(dashboard.DashboardHandler):
         if course_section.students and len(course_section.students) > 0:
             #course_section.students = sorted(course_section.students.values(), key=lambda k: (k['name']))
             for student in course_section.students.values():
+                this_student = Teacher.get_student_by_email(student['email'])
                 temp_student = {}
 
                 temp_student['unit_completion'] = teacher_parsers.StudentProgressTracker.get_unit_completion(
-                    Student.get_by_email(
-                    student[
-                    'email']), self.get_course())
-                temp_student['course_completion'] = teacher_parsers.StudentProgressTracker.get_overall_progress(Student.get_by_email(student[
-                    'email']), self.get_course())
+                    this_student, self.get_course())
+##                    Student.get_by_email(
+#                     student[
+#                     'email']), self.get_course())
+                temp_student['course_completion'] = teacher_parsers.StudentProgressTracker.get_overall_progress(
+                    this_student, self.get_course())
+#                     Student.get_by_email(student[
+#                     'email']), self.get_course())
                 temp_student['detailed_course_completion'] = teacher_parsers.StudentProgressTracker.get_detailed_progress(
-                    Student.get_by_email(student['email']), self.get_course())
+                    this_student, self.get_course())
+#                    Student.get_by_email(student['email']), self.get_course())
                 temp_student['email'] = student['email']
                 temp_student['name'] = student['name']
 
