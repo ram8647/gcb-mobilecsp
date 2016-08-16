@@ -51,7 +51,7 @@ Basic outline
 * Questions are not filled in with blue circles on the syllabus or in the lessons.
 
 
->>>>>>>>>>>>>>>>>>>>>>     CUSTOM TABS        <<<<<<<<<<<<<<<<<<<<<<<<<
+>>>>>>>>>>>>>>>>>>>>>>     CUSTOM STUFF        <<<<<<<<<<<<<<<<<<<<<<<<<
 
 >>>>>>>>>>>>>>>>>>>>>>   Student Course Resources Tab   <<<<<<<<<<<<<<<
 -- Copy resources.py into controllers/
@@ -67,8 +67,6 @@ Basic outline
         </li>
        <!--  end custom code -->
 
->>>>>>>>>>>>>>>>>>>>>>     CUSTOM MODULES     <<<<<<<<<<<<<<<<<<<<<<<<<
-
 >>>>>>>>>>>>>>>>>>>>>>        Quizly          <<<<<<<<<<<<<<<<<<<<<<<<
 -- Add quizly/ controller directory to the modules directory. This includes quizly.py
 -- Copy quizly/ source code to assets:  assets/lib/quizly
@@ -81,8 +79,7 @@ Basic outline
 <!-- ***********  CUSTOMIZATION required for Quizly assessments  ***                                                                                                     
      * which are processed in activity-generic.js. so this has to                                                                                                        
      * go after activity-generic.js.                                                                                                                                     
-     ***************************************************************                                                                                                     
--->
+     ***************************************************************                                                                                                     -->
   <script src="assets/lib/quizly/activity-quizme.js"></script>
 
   <script src="/modules/oeditor/_static/js/butterbar.js"></script>
@@ -95,6 +92,10 @@ Basic outline
 -- Import module in main.py:  from modules.khanex import khanex
 -- Register khanex module in main.py: khanex.register_module().enable()
 
+>>>>>>>>>>>>>>>>>>>>>>   Lessons Framework and Hover <<<<<<<<<<<<<<<<<<<<<
+-- Copy the lessons/  folder into assets/lib/:   cp -r ../lessons assets/lib/
+
+
 >>>>>>>>>>>>>>>>>>>>>>       Teacher Dashboard          <<<<<<<<<<<<<<<<<<<<<<<<
 
 -- Add teachers_dashboard directory to the modules directory
@@ -105,21 +106,19 @@ Basic outline
    user_id = db.StringProperty(indexed=True)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  V1.10 Upgrade issues !!!!!!!!!!!!!!!!!!!!!!!!
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Dashboard <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 -- Error in teacher_dashboard.py -- import tabs : no such file in v1.10.  The current version
    is using tabs.Registry.register() to register the teacher dashboard.  This no longer works. 
    Had to comment out much code in order to avoid Python errors. 
-
->>>>>>>>>>>>>>>>>>>>>>> Teacher Dashboard <<<<<<<<<<<<<<<<<<<<<<<<<<<
-* Copied the version from coursebuilder/mobilecsp-v18
-* Missing in 1.10 modules/dashboard/tabs.py which contains Registry.register.  Moved into modules/teacher_dashboard.
-* DashboardHandler.add_external_permission is deprecated to deprecated_add_external_permission --> changed in teacher_dashboard.py
-* dashboard.py changed 'map_action_to_permission' to 'map_get_action_to_permission' -->  revised method calls in teacher-dashboard.py
+-- Update:  Dashboard has been fixed and updated to v1.10. 
 
 >>>>>>>>>>>>>>>>>>>>>>> NOT SURE IF THESE ARE NEEDED ANYMORE ?? <<<<<<<<<<<<<<<<<
  preview.html -- not sure what this does? 
  unit.html -- commented out the Show Syllabus/Hide Syllabus button
 
->>>>> assets/lib/activity-generic.js
+>>>>>>>>>>>>>>>>>>>>>>>  assets/lib/activity-generic.js  <<<<<<<<<<<<<<<<<<<<<<<<
 NOTE:  Currently we are using the default v1.10 version of this file and everything seems to
 work.  At one point there was custom code in this file for processing Quizly Assessments (not activities)
 
