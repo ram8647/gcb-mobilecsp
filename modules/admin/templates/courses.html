@@ -1,0 +1,108 @@
+<link rel="stylesheet" href="/modules/admin/_static/css/courses.css">
+
+<div class="gcb-button-toolbar">
+  <a id="add_course"
+     class="gcb-button"
+     role="button"
+     data-email="{{ email }}"
+     data-xsrf-token="{{ add_course_xsrf_token }}">
+    Add Course...
+  </a>
+  <a id="add_sample_course"
+     class="gcb-button"
+     role="button">
+    Add Sample Course...
+  </a>
+</div>
+<div style="clear: both; padding-top: 2px;">
+</div>
+
+<div class="gcb-list gcb-list--autostripe">
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>URL Component</th>
+        <th>Availability</th>
+        <th class="gcb-list__cell--icon"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for course in courses %}
+      <tr>
+        <td>
+          <a href="{{ course.link }}">
+            {{ course.name }}
+          </a>
+        </td>
+        <td>
+          <a href="{{ course.slug }}" target="_blank">
+            {{ course.slug }}
+            <i class="material-icons gcb-list__icon gcb-list__icon--rowhover">open_in_new</i>
+          </a>
+        </td>
+        <td>
+          {% if course.now_available %}
+            Public
+          {% else %}
+            Private
+          {% endif %}
+        </td>
+        <td>
+          {% if course.namespace != '' %}
+            <form
+               action="{{ course.slug }}{{ delete_course_link }}"
+               method="POST"
+               delete_course="true">
+              <input
+                 type="hidden"
+                 name="xsrf_token"
+                 value="{{ delete_course_xsrf_token }}">
+              <input
+                 type="hidden"
+                 name="is_selected_course"
+                 value="{{ course.is_selected_course }}">
+
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+
+      {% if courses|length %}
+      <tr>
+        <td colspan="4" style="text-align: right">
+          Total: {{ courses|length }} item(s)
+        </td>
+      </tr>
+      {% endif %}
+
+    </tbody>
+  </table>
+
+  {% if not courses|length %}
+    <div class="gcb-list__empty-message-wrapper">
+      <div class="gcb-list__empty-message">
+        <div class="empty-instance-instructions">
+          <div class="header">
+            Create a course by clicking one of the buttons above and then...
+          </div>
+          <dl>
+            <dt>Create</dt>
+            <dd>create course content</dd>
+            <dt>Style</dt>
+            <dd>style the course</dd>
+            <dt>Publish</dt>
+            <dd>publish the course</dd>
+            <dt>Manage</dt>
+            <dd>manage the course</dd>
+            <dt>Settings</dt>
+            <dd>change course settings</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script src="/modules/admin/_static/js/courses.js"></script>

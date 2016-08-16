@@ -1,0 +1,27 @@
+NOTE: I couldn't get this module to work.  The problem was that
+I could not get the quizly module to include other properties besides
+'name'.   So I switched to creating a Quizly component, which worked
+fine, except for being integrated into GCB's scoring system.  Components
+are defined in the /gcb folder.
+
+To reinstate this module you would only have to add the following
+lines to main.py:
+
+  import modules.quizly.quizly
+  ...
+  modules.quizly.quizly.register_module().enable()
+
+For instructions on how to set up a custom module see:
+  https://code.google.com/p/course-builder/wiki/CreateModules
+
+A complete module for Khan Academy exercises is available here:
+  http://www.softwaresecretweapons.com/jspwiki/khan-academy-exercises-in-course-builder
+
+To create a custom component see 
+  https://code.google.com/p/course-builder/wiki/CreateComponents
+
+
+
+
+
+

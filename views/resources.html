@@ -1,0 +1,58 @@
+{% extends 'base_course.html' %}
+
+{% block subtitle %}
+  {# I18N: Title of the webpage. #}
+  - {{ gettext('Resources') }}
+{% endblock subtitle %}
+
+{% block top_content %}
+{% endblock %}
+
+{% block main_content %}
+<div>
+<style type="text/css">
+/* From the Creative Computing Course: KB: Styles for bios page. */
+.gcb-bios-name {
+  color: #b34c2b;
+  font-family: "open sans",arial,sans-serif;
+  font-size: 20px;
+  font-weight: normal;
+  margin: 10px 7px;
+}
+.gcb-bios-description {
+  font-family: "open sans",arial,sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  margin: 10px 7px;
+}
+</style>
+
+  <h1>Resources</h1>
+
+   <ul>
+<h4>Course at a Glance</h4>
+    <li><a href="./staff">Mobile CSP Online Staff</a></li>
+    <li><a target="_blank" href="https://docs.google.com/document/d/1iFHenUMq8-VLF5EQ8mG9IwaFfm2elg_ox5_lzzjTW14/edit?usp=sharing
+">Mobile CSP Curriculum Overview</a></li>
+    <li><a target="_blank" href="https://docs.google.com/document/d/10JfiYLG6pTGQR8EIf1yRxyWnNT9pnHtdwVy3JwhE8Vw/edit?usp=sharing">CS Principles Performance Tasks</a>
+<h4>App Inventor</h4>
+    <li><a target="_blank" href="http://appinventor.org">Appinventor.org </a></li>
+    <li><a target="_blank" href="http://appinventor.cs.trincoll.edu/csp/quizly/">Quizly: Interactive App Inventor Quizzes</a></li>
+    <li><a target="_blank" href="http://appinventor.cs.trincoll.edu/csp/oneminutelessons/">One Minute App Inventor Lessons</a>
+    <li><a target="_blank" href="https://drive.google.com/drive/folders/0B5ZVxaK8f0u9azJYV2xDRldEYTQ">App Inventor Programming Drills</a>
+    <li><a target="_blank" href="http://appinventor.mit.edu/explore/resources/beginner-app-inventor-concept-cards.html">App Inventor Concept Cards</a></li>
+    <li><a target="_blank" href="http://www.tair.info/">TAIR - The App Inventor Repository</a> - resource on App Inventor programming</li>
+    <li><a target="_blank" href="https://docs.google.com/document/d/1XBRVe9Rb8bIauJohaf-Bb-GJ-D9hVHOjoongpMu_vyA/edit"> Emulator Information and Installation</a>
+    <li><a target="_blank" href="http://puravidaapps.com/snippets.php">Pura Vida Apps</a> - useful code snippets</li>
+<!--    <li><a target="_blank" href=""></a></li>  -->
+<h4>Media</h4>
+   <li><a target="_blank" href="http://creativecommons.org/licenses/">Creative Commons Licenses</a></li>
+   <li><a target="_blank" href="http://search.creativecommons.org/">Search Creative Commons Media </a></li>
+         <li><a target="_blank" href="https://vimeo.com/help/faq/legal-stuff/fair-use">Fair Use on Vimeo</a> - good overview of fair use and what can or can't be used, applies to apps as well as Vimeo videos</li>
+         <li><a target="_blank" href="https://images.google.com/">Google Image Search</a> - search for an image, then on the results page, select Search tools. Under the Usage Rights drop-down, select the appropriate level</li>
+   </ul>
+	
+</div>
+
+{% endblock %}
+

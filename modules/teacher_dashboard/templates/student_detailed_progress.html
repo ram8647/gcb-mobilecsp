@@ -1,0 +1,232 @@
+{% if students %}
+  <div style="margin-bottom: 15px;">
+    <label>Please enter a student email: </label>
+    <input id="students_dropdown">
+    <button id="student-info-btn" class="gcb-button">Get Student Details</button>
+  </div>
+
+  <script>
+    $(document).ready(function() {
+        window.studentEmail = '{{student['email']}}';
+
+        function loadActivityScores(studentEmail) {
+            var activityScores = new ActivityScores();
+
+            var students;
+
+            if (studentEmail) {
+                students = [studentEmail];
+            }
+            else {
+                students = ['{{ student['email'] }}'];
+            }
+
+            var activityScoresLoaded = $.Deferred(function(def) {
+                activityScores.load(function() {
+                    cbHideMsg();
+                    def.resolve()
+                }, students, false);
+            });
+
+            $.when(activityScoresLoaded).then(function() {
+                window.scores = activityScores.getActivityScoresByStudentId();
+                $('#date-scores-cached').text(activityScores.getDateCached());
+                $('.lesson').hide();
+                $('#questions-container').empty();
+            });
+        }
+
+        window.loadActivityScores = loadActivityScores;
+
+        cbShowMsg('Loading Activity Scores. This may take a while...');
+        loadActivityScores();
+
+        $('#student-info-btn').click(function () {
+            if ($('#students_dropdown').val().trim() === '' || selectedStudent === undefined) {
+                cbShowMsgAutoHide('Please select a student.');
+                return;
+            }
+
+            window.studentEmail = selectedStudent.value;
+
+            cbShowMsg('Loading...');
+            $('#student-detail-section').css('display', 'block');
+            var unitList = new UnitList();
+
+            loadActivityScores(selectedStudent.value);
+
+            var unitListLoaded = $.Deferred(function(def) {
+                unitList.load(function() {
+                    def.resolve()
+                }, selectedStudent.value);
+            });
+
+            $.when(unitListLoaded).then(function() {
+                var studentDetailTable = new StudentDetailTable(unitList);
+                $('.student-detail-table tr:gt(0)').remove();
+                studentDetailTable._buildBody().appendTo('.student-detail-table');
+
+                $('.student-name').text(unitList.getStudentName());
+                $('.student-email').text(unitList.getStudentEmail());
+
+                cbHideMsg();
+            });
+        });
+
+        var data = [
+            {% for student in students%}
+                {
+                    value: "{{ student['email'] }}",
+                    label: "{{ student['name'] }}",
+                    desc: "{{ student['email'] }}"
+                } {% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        $("#students_dropdown").autocomplete({
+            source: function (request, response) {
+                function hasMatch(s) {
+                    return s.toLowerCase().indexOf(request.term.toLowerCase())!==-1;
+                }
+
+                var i, l, obj, matches = [];
+
+                if (request.term==="") {
+                    response([]);
+                    return;
+                }
+
+                for  (i = 0, l = data.length; i<l; i++) {
+                    obj = data[i];
+                    if (hasMatch(obj.label) || hasMatch(obj.desc)) {
+                        matches.push(obj);
+                    }
+                }
+                response(matches);
+            },
+            select: function (a, b) {
+                selectedStudent = b.item;
+            }
+        }).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+            return $( "<li>" ).append( "<a>" + item.label +
+                        "<br><span style='font-size: 80%;'>Email: " + item.desc + "</span>" ).appendTo( ul );
+        };
+
+    });
+  </script>
+{% else %}
+  <script>
+      cbShowMsg('There are no students currently associated with any courses.');
+  </script>
+{% endif %}
+
+<div id="student-detail-section" {% if not student %} style="display: none;" {% endif %} >
+  <h3>Student Dashboard for <span class="student-name">{{ student.name }}</span></h3>
+    <div class="student-detail" style="margin: 5px;">
+      <div style="margin: 3px;">
+        <label class="data student-email">{{student.email}}</label>
+      </div>
+      <div style="margin-top: 15px; margin-left: -8px;">
+        <label class="gcb-button refresh-scores">Refresh Scores</label><span style="margin-left: 10px;"
+                                                                             id="date-scores-cached"></span>
+        <script>
+          $(".refresh-scores").click(function() {
+                cbShowMsg('Loading Activity Scores. This may take a while...');
+
+                if (window.selectedStudent) {
+                    loadActivityScores(window.selectedStudent.value);
+                }
+                else {
+                    loadActivityScores('{{ student['email'] }}');
+                }
+            });
+        </script>
+      </div>
+    </div>
+
+    <table class="student-detail-table gcb-pull-left" style="margin-top: 15px; width: 50%;">
+      <colgroup>
+        <col style="width: 30%">
+        <col>
+      </colgroup>
+
+      <tr>
+        {# I18N: Table header for the student's assessment scores. #}
+        <th class="expand-one" align="left" colspan=2>
+          {{ gettext('Unit Completion') }}
+        </th>
+      </tr>
+
+      {% if units %}
+        {% for unit in units %}
+          <tr class="content-one {{unit['unit_id']}} unit_title">
+            <th class="unit-title" style="cursor:pointer;color:blue" align="left">{{ unit['title'] }}</th>
+            <td>
+              <span id="unit-completion-{{unit['title']}}">{{ unit['completion'] * 100 }}%</span>
+            </td>
+          </tr>
+          {% for lesson in unit['lessons'] %}
+            <tr class="content-one {{unit['unit_id']}}-lessons {{lesson['lesson_id']}}-lesson lesson"
+                style="display: none;">
+              <th class="lesson-title" align="left" style="padding-left: 20px;">{{ lesson['title'] }}</th>
+              <th style="display: none" class="lesson-id">{{ lesson['lesson_id'] }}</th>
+              <td>
+                <span class="lesson-completion" id="lesson-completion-{{unit['title']}}">N/A</span>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+
+        {% for unit in units %}
+          <script>
+            $('.{{unit['unit_id']}}').click(function(){
+                var unitId = {{unit['unit_id']}};
+                $('.{{unit['unit_id']}}-lessons').slideToggle('fast', function () {
+                    if (!$('.{{unit['unit_id']}}-lessons').is(':visible')) {
+                        $('#questions-container').empty();
+                    }
+                    else {
+                        $('.{{unit['unit_id']}}-lessons').each(function () {
+                            var lessonId = $(this).find('.lesson-id').text();
+
+                            var lessonScores = retrieveLessonScores(window.scores, unitId, lessonId);
+
+                            var activityTable = new ActivityTable(lessonScores);
+                            var table = activityTable.buildTable(
+                                unitId,
+                                lessonId,
+                                $('.' + unitId).find('.unit-title').text(),
+                                $(this).find('.lesson-title').text()).appendTo('#questions-container');
+
+                            var lessonScore = CalculateLessonScore(window.studentEmail,
+                                unitId,
+                                lessonId,
+                                window.scores);
+                            var lessonCompletion = CalculateLessonCompletion(window.studentEmail,
+                                unitId,
+                                lessonId,
+                                window.scores);
+
+                            $(this).find('.lesson-completion').text(lessonCompletion + '% answered | Score: ' +
+                                lessonScore.total + '/' + lessonScore.possible);
+                        });
+                    }
+                });
+            });
+          </script>
+        {% endfor %}
+      {% endif %}
+
+    </table>
+
+    <div id="questions-container"></div>
+
+    <div id="question-window" style="display: none;">
+      <div id="question-background"></div>
+      <div id="question-container">
+        <a class="gcb-button question-close-button">X</a>
+        <div id="question-preview"><iframe  id="question-preview" /></div>
+      </div>
+    </div>
+</div>
+

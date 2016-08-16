@@ -1,0 +1,330 @@
+<!-- setting up global variable for student completion values
+     and the lesson dropdown
+-->
+<script type="text/javascript">
+    window.course_namespace = '{{namespace}}';
+    {% if section %}
+        {% if section.students %}
+            var studentsJson = '{{ students_json|safe }}';
+            //var studentsJson = "{{ section.students|safe }}";
+            window.students = jQuery.parseJSON(studentsJson);
+
+            $(function() {
+                // if cbShowMsg {
+                cbShowMsg('Loading Activity Scores. This may take a while...');
+                //}
+                var activityScores = new ActivityScores();
+
+                var students = [];
+                $.each(window.students, function (key, value) {
+                    students.push(key);
+                });
+
+                var activityScoresLoaded = $.Deferred(function(def) {
+                    activityScores.load(function() {
+                        cbHideMsg();
+                        def.resolve()
+                    }, students, false);
+                });
+                $.when(activityScoresLoaded).then(function() {
+                    window.scores = activityScores.getActivityScoresByStudentId();
+                    $('#date-scores-cached').text(activityScores.getDateCached());
+                    RebuildCompletionColumn(window.students, $('.unit-select'), $('.lesson-select'));
+                });
+            });
+        {% endif %}
+    {% endif %}
+    {% if lessons %}
+        var lessonsJson = '{{ lessons|safe }}';
+        window.lessons = jQuery.parseJSON(lessonsJson);
+    {% endif %}
+</script>
+
+<div name="student_list" id="student_list" targ>
+    <form>
+        <input type="hidden" name="action" value="student_list" />
+        <input type="hidden" name="xsrf_token" value="{{ student_list_xsrf_token|escape }}">
+
+        <div id="sl-info" name="student_list_header">
+            <div>
+                <h3>{{section.section_name}} | {{section.section_year}}</h3>
+            </div>
+            <div style="margin: 5px 15px 5px 15px;">
+                <label class="title">Course is currently </label>
+                <label class="data">
+                    <strong>
+                        {% if section.is_active == True %}
+                            Active
+                        {% else %}
+                            InActive
+                        {% endif %}
+                    </strong>
+                </label>
+            </div>
+            <div style="margin-left: 15px;">
+                <label class="data-last">{{section.section_description}}</label>
+            </div>
+        </div>
+
+        <p class="description" style="font-size: 12px;">You can manage your student enrollment here, as well as view
+            each students completion progress at the course, unit, and lesson level.</p>
+
+        <div>
+            <div class="filter-controls" style="margin: 8px; margin-top: 0px; margin-bottom: 20px; float:left;">
+                <h4 style="margin-top: 5px;">Completion Level</h4>
+                <label>Unit: </label>
+                <select class="unit-select">
+                    <option value="course_completion">Course</option>
+                    {% if units %}
+                        {% for unit in units %}
+                            {% if unit.type == 'U' %}
+                                <option value="{{ unit.unit_id }}">{{ unit.title }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </select>
+
+                <label style="margin-left: 20px;">Lesson</label>
+                <select class="lesson-select" style="min-width: 200px;">
+                    <option value="NA">N/A</option>
+                </select>
+
+                <label class="gcb-button refresh-scores" style="margin-left: 20px;">Refresh Scores</label>
+                <span style="margin-left: 10px;" id="date-scores-cached"></span>
+            </div>
+
+            <div class="student-list-nav-bar-div" style="float: right; vertical-align: bottom; margin-top: 35px;">
+                <a class="gcb-button add-students gcb-pull-right" style="cursor:pointer;">Add Students</a>
+
+                <script>
+                    $(function() {
+                        $(".add-students").click(function() {
+                            //activates add students popup, a global object defined in student list table manager js
+                            var editStudentsPopup = new EditStudentsPopup('{{ section.section_id }}',
+                            '{{add_student_xsrf_token}}', true);
+
+                            //pass a callback function into the popup's open, will get called if save is successful
+                            editStudentsPopup.open(function (students) {
+                                var table = $(document).find('.student-list-table');
+                                $('.student-list-table tr:gt(0)').remove(); //remove all but header row
+
+                                $('.unit-select').val('course_completion');
+                                var newOptions = ({
+                                    key: 'NA',
+                                    value: 'N/A'
+                                });
+                                var lessonSelect = $(".lesson-select");
+                                lessonSelect.empty(); // remove old options
+                                $.each(newOptions, function(value,key) {
+                                  lessonSelect.append($("<option></option>")
+                                     .attr("value", key.key).text(key.value));
+                                });
+
+                                $('#questions-container').empty();
+
+                                editStudentsPopup.rebuildStudentsTable(students, table);
+
+                                window.students = students;
+                            });
+                        })
+
+                        $(".delete-students").click(function() {
+                            //activates delete students popup, a global object defined in student list table manager js
+                            var editStudentsPopup = new EditStudentsPopup('{{ section.section_id }}',
+                            '{{add_student_xsrf_token}}', false);
+
+                            //pass a callback function into the popup's open, will get called if save is successful
+                            editStudentsPopup.open(function (students) {
+                                var table = $(document).find('.student-list-table');
+                                $('.student-list-table tr:gt(0)').remove(); //remove all but header row
+
+                                $('.unit-select').val('course_completion');
+                                var newOptions = ({
+                                    key: 'NA',
+                                    value: 'N/A'
+                                });
+                                var lessonSelect = $(".lesson-select");
+                                lessonSelect.empty(); // remove old options
+                                $.each(newOptions, function(value,key) {
+                                  lessonSelect.append($("<option></option>")
+                                     .attr("value", key.key).text(key.value));
+                                });
+
+                                $('#questions-container').empty();
+
+                                editStudentsPopup.rebuildStudentsTable(students, table);
+
+                                window.students = students;
+                            });
+                        })
+
+                        $(".refresh-scores").click(function() {
+                            cbShowMsg('Loading Activity Scores. This may take a while...');
+
+                            var activityScores = new ActivityScores();
+
+                            var students = [];
+                            $.each(window.students, function (key, value) {
+                                students.push(value.email);
+                            });
+
+                            var activityScoresLoaded = $.Deferred(function(def) {
+                                activityScores.load(function() {
+                                    cbHideMsg();
+                                    def.resolve()
+                                }, students, true);
+                            });
+                            $.when(activityScoresLoaded).then(function() {
+                                window.scores = activityScores.getActivityScoresByStudentId();
+                                $('#date-scores-cached').text(activityScores.getDateCached());
+                                RebuildCompletionColumn(window.students, $('.unit-select'), $('.lesson-select'));
+
+                                if ($($('.lesson-select')).val() !== 'NA') {
+                                    $('#questions-container').empty();
+
+                                    var lessonScores = retrieveLessonScores(window.scores, $($('.unit-select')).val(), $
+                                        ($('.lesson-select')).val());
+
+                                    var activityTable = new ActivityTable(lessonScores);
+                                    activityTable.buildTable($($('.unit-select')).val(), $($('.lesson-select')).val(),
+                                        $($('.unit-select option:selected')).text(),
+                                        $($('.lesson-select option:selected')).text()).appendTo('#questions-container');
+                                }
+                            });
+                        });
+                    });
+                </script>
+
+                <a class="gcb-button delete-students gcb-pull-right" style="cursor:pointer;">Delete Students</a>
+            </div>
+        </div>
+
+        <div style="clear: both; padding-top: 2px;">
+            <h3>Students</h3>
+        </div>
+
+        <script type="text/javascript">
+            $(function() {
+                //handles updating the lesson select options and completion values
+                $('.unit-select').change(function() {
+                    $('#questions-container').empty();
+
+                    var newOptions = [];
+                    if (this.value != 'course_completion') {
+                        var lessons = window.lessons[this.value];
+
+                        for (var i =0; i < lessons.length; i++) {
+                            newOptions.push({
+                                key: lessons[i].lesson_id,
+                                value: lessons[i].title
+                            });
+                        }
+                    }
+                    else {
+                        newOptions.push({
+                            key: 'NA',
+                            value: 'N/A'
+                        });
+                    }
+                    var lessonSelect = $(".lesson-select");
+                    lessonSelect.empty(); // remove old options
+                    $.each(newOptions, function(value,key) {
+                      lessonSelect.append($("<option></option>")
+                         .attr("value", key.key).text(key.value));
+                    });
+
+                    //defined in popup.js
+                    RebuildCompletionColumn(window.students, this, $('.lesson-select'));
+
+                    if ($($('.lesson-select')).val() !== 'NA') {
+                        var lessonScores = retrieveLessonScores(window.scores, $(this).val(), $($('.lesson-select')).val());
+
+                        var activityTable = new ActivityTable(lessonScores);
+                        activityTable.buildTable($(this).val(), $($('.lesson-select')).val(),
+                            $($('.unit-select option:selected')).text(),
+                            $($('.lesson-select option:selected')).text()).appendTo('#questions-container');
+                    }
+                });
+            });
+            $(function() {
+                $('.lesson-select').change(function() {
+                    //defined in popup.js
+                    RebuildCompletionColumn(window.students, $('.unit-select'), this);
+
+                    $('#questions-container').empty();
+
+                    if ($(this).val() !== 'NA') {
+                        var lessonScores = retrieveLessonScores(window.scores, $($('.unit-select')).val(), $(this).val());
+
+                        var activityTable = new ActivityTable(lessonScores);
+                        activityTable.buildTable($($('.unit-select')).val(), $(this).val(), $($('.unit-select')).text(),
+                            $($('.lesson-select option:selected')).text()).appendTo('#questions-container');
+                    }
+                });
+            });
+
+            function rebuildLessonSelect(unitId) {
+                var options = {};
+
+            }
+        </script>
+
+        <div id="sl-right">
+            <table class="student-list-table" name="student_list_table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Course/Unit Completion</th>
+                        <th>Lesson Completion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if section.students %}
+                        {% for student in section.students.values() | sort(attribute='name') %}
+                            <tr>
+                                <td class="student-dashboard"><a class="gcb-button" role="button"
+                                       href="/{{namespace}}/modules/teacher_dashboard?action=teacher_dashboard&tab=student_detail&student={{ student['email'] }}">View Dashboard</a></td>
+                                <td class="student-name">{{ student['name'] }}</td>
+                                <td class="student-email">{{ student['email'] }}</td>
+                                <td class="student-completion">
+                                    <progress class="student-progress" value="{{ student['course_completion'] / 100 }}">
+                                        <!-- Browsers that support the progress tag will ignore this div -->
+                                        <div class="progress-bar">
+                                            <span style="width: {{ student['course_completion'] / 100 }}%;">Progress: {{
+                                                student['course_completion'] }}%</span>
+                                        </div>
+                                    </progress>
+                                    &nbsp;
+                                    <div class="student-completion-value">{{ student['course_completion'] }}%</div></td>
+                                <td class="student-lesson-completion">
+                                    <span class="student-lesson-completion-percentage">N/A</span>
+                                    <span class="student-lesson-completion-score"></span>
+                                </td>
+                                <td style="display:none;"><input  class="student-id" type="hidden" value="{{ student['email'] }}"
+                                    /></td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="questions-container"></div>
+
+        <div id="question-window" style="display: none;">
+          <div id="question-background"></div>
+          <div id="question-container">
+            <a class="gcb-button question-close-button">X</a>
+            <div id="question-preview"><iframe  id="question-preview" /></div>
+          </div>
+        </div>
+
+        <div class="sl-footer" style="margin: 5px;">
+            <a class="gcb-button gcb-pull-right"
+                href="/{{namespace}}/modules/teacher_dashboard?action=teacher_dashboard&tab=">Exit</a>
+        </div>
+
+    </form>
+</div>
