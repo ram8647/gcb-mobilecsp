@@ -88,7 +88,7 @@ StudentDetailTable.prototype = {
               lessonId,
               window.scores);
 
-            $(this).find('.lesson-completion').text(lessonCompletion + '% answered | Score: ' +
+            $(this).find('.lesson-completion').text(lessonCompletion.toPrecision(3) + '% answered | Score: ' +
               lessonScore.total + '/' + lessonScore.possible);
           });
         }
@@ -111,7 +111,7 @@ StudentDetailTable.prototype = {
         '</td>'
     );
 
-    td.text(unit.completion * 100 + '%');
+    td.text((unit.completion * 100).toPrecision(3) + '%');
     tr.append(td);
 
     return tr;
@@ -143,7 +143,7 @@ StudentDetailTable.prototype = {
         '</td>'
     );
 
-    td.text(lesson.completion / 2 * 100 + '%');
+    td.text((lesson.completion / 2 * 100).toPrecision(3) + '%');
     tr.append(td);
 
     return tr;
