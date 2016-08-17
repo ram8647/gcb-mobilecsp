@@ -151,7 +151,6 @@ class TeacherHandler(dashboard.DashboardHandler):
         student = None
         if student_email:
             student = Teacher.get_student_by_email(student_email)
-#            student = Student.get_by_email(student_email)
 
         if (student):
             course = self.get_course()
@@ -223,16 +222,10 @@ class TeacherHandler(dashboard.DashboardHandler):
 
                 temp_student['unit_completion'] = teacher_parsers.StudentProgressTracker.get_unit_completion(
                     this_student, self.get_course())
-##                    Student.get_by_email(
-#                     student[
-#                     'email']), self.get_course())
                 temp_student['course_completion'] = teacher_parsers.StudentProgressTracker.get_overall_progress(
                     this_student, self.get_course())
-#                     Student.get_by_email(student[
-#                     'email']), self.get_course())
                 temp_student['detailed_course_completion'] = teacher_parsers.StudentProgressTracker.get_detailed_progress(
                     this_student, self.get_course())
-#                    Student.get_by_email(student['email']), self.get_course())
                 temp_student['email'] = student['email']
                 temp_student['name'] = student['name']
 
