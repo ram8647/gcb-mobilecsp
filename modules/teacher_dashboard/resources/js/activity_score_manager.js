@@ -1,3 +1,8 @@
+/*********************** Start Dependencies ***********************************/
+// The following symols are required to be defined in the global scope:
+//   cbShowMsg, cbShowMsgAutoHide
+var showMsg = cbShowMsg;
+/************************ End Dependencies ************************************/
 
 function parseAjaxResponse(s) {
   // XSSI prefix. Must be kept in sync with models/transforms.py.
