@@ -1,6 +1,7 @@
 __author__ = 'ehiller@css.edu'
 
 import datetime
+import logging
 
 from models import transforms
 from models.models import Student
@@ -8,7 +9,6 @@ from models.models import EventEntity
 from models import utils as models_utils
 from models import jobs
 from models import event_transforms
-
 
 from models.models import QuestionDAO
 from models.models import QuestionGroupDAO
@@ -86,32 +86,38 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 group_to_questions, timestamp)
 
             #add score to right lesson
-            question_info = questions[data['instanceid']]
-            unit_answers = student_answers.get(question_info['unit'], {})
-            lesson_answers = unit_answers.get(question_info['lesson'], {})
+            temp_index = data['instanceid']
+            logging.info('***********RAM************** data[instanceid] = ' + temp_index)
+            try: 
+                question_info = questions[temp_index]
+                unit_answers = student_answers.get(question_info['unit'], {})
+                lesson_answers = unit_answers.get(question_info['lesson'], {})
 
-            for answer in answers:
-                question_answer_dict = {}
-                question_answer_dict['unit_id'] = answer.unit_id
-                question_answer_dict['lesson_id'] = answer.lesson_id
-                question_answer_dict['sequence'] = answer.sequence
-                question_answer_dict['question_id'] = answer.question_id
-                question_answer_dict['question_type'] = answer.question_type
-                question_answer_dict['timestamp'] = answer.timestamp
-                question_answer_dict['answers'] = answer.answers
-                question_answer_dict['score'] = answer.score
-                question_answer_dict['weighted_score'] = answer.weighted_score
-                question_answer_dict['tallied'] = answer.tallied
+                for answer in answers:
+                    question_answer_dict = {}
+                    question_answer_dict['unit_id'] = answer.unit_id
+                    question_answer_dict['lesson_id'] = answer.lesson_id
+                    question_answer_dict['sequence'] = answer.sequence
+                    question_answer_dict['question_id'] = answer.question_id
+                    question_answer_dict['question_type'] = answer.question_type
+                    question_answer_dict['timestamp'] = answer.timestamp
+                    question_answer_dict['answers'] = answer.answers
+                    question_answer_dict['score'] = answer.score
+                    question_answer_dict['weighted_score'] = answer.weighted_score
+                    question_answer_dict['tallied'] = answer.tallied
 
-                if answer.sequence in lesson_answers and lesson_answers[answer.sequence] < timestamp:
-                    lesson_answers[answer.sequence] = question_answer_dict
-                elif answer.sequence not in lesson_answers:
-                    lesson_answers[answer.sequence] = question_answer_dict
+                    if answer.sequence in lesson_answers and lesson_answers[answer.sequence] < timestamp:
+                        lesson_answers[answer.sequence] = question_answer_dict
+                    elif answer.sequence not in lesson_answers:
+                        lesson_answers[answer.sequence] = question_answer_dict
 
-            unit_answers[question_info['lesson']] = lesson_answers
-            student_answers[question_info['unit']] = unit_answers
+                unit_answers[question_info['lesson']] = lesson_answers
+                student_answers[question_info['unit']] = unit_answers
 
-            self.activity_scores[student.email] = student_answers
+                self.activity_scores[student.email] = student_answers
+            except:
+                logging.warning('***********RAM************** bad key ' + temp_index)
+                self.activity_scores = { }
 
         return self.activity_scores
 
@@ -233,12 +239,17 @@ class ActivityScoreParser(jobs.MapReduceJob):
         else:
             uncached_students = []
             for student_id in student_user_ids:
-                scores_for_student = MemcacheManager.get(cls._memcache_key_for_student(Student.get_by_user_id(student_id).email))
-                if scores_for_student:
-                    cached_date = scores_for_student['date']
-                    activityParser.activity_scores[student_id] = scores_for_student['scores']
-                else:
-                    uncached_students.append(student_id)
+                if student_id != '':
+                    student = Student.get_by_user_id(student_id)
+                    temp_email = student.email
+                    temp_mem = cls._memcache_key_for_student(temp_email)
+                    scores_for_student = MemcacheManager.get(temp_mem)
+#                scores_for_student = MemcacheManager.get(cls._memcache_key_for_student(Student.get_by_user_id(student_id).email))
+                    if scores_for_student:
+                        cached_date = scores_for_student['date']
+                        activityParser.activity_scores[student_id] = scores_for_student['scores']
+                    else:
+                        uncached_students.append(student_id)
             if len(uncached_students) > 0:
                 if cached_date == None or datetime.datetime.now() < cached_date:
                     cached_date = datetime.datetime.now()
