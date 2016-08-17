@@ -207,7 +207,7 @@
                                 lessonId,
                                 window.scores);
 
-                            $(this).find('.lesson-completion').text(lessonCompletion + '% answered | Score: ' +
+                            $(this).find('.lesson-completion').text(lessonCompletion.toPrecision(3) + '% answered | Score: ' +
                                 lessonScore.total + '/' + lessonScore.possible);
                         });
                     }
