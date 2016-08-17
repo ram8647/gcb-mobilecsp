@@ -180,6 +180,9 @@ function retrieveLessonScores(scores, unitId, lessonId) {
 
   $.each(scores, function (studentId, units) {
     var questions = units[unitId][lessonId];
+//     if (!questions) {
+//       return;
+//     }
     $.each(questions, function (sequence, question) {
       if (!lessonScores[sequence]) {
         $.each(question['choices'], function (key, value) {
