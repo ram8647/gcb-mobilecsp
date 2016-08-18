@@ -163,7 +163,7 @@ ActivityTable.prototype = {
 
     this._content = $(
       '<div class="info" style="margin: 10px;">' +
-      '<h3>Question Scores for Unit: ' + unitTitle + ', Lesson: ' + lessonTitle + '</h3>' +
+      '<!-- <h3>Question Scores for Unit: ' + unitTitle + ', Lesson: ' + lessonTitle + '</h3> -->' +
       '<table class="questions-table"></table>');
 
     this._table = this._content.find('.questions-table');
@@ -178,41 +178,47 @@ ActivityTable.prototype = {
 function retrieveLessonScores(scores, unitId, lessonId) {
   var lessonScores = {};
 
+  // Something must have changed in v1.10.  questions is frequently null.
+  // The problem is units[unitId][lessonId] throws an error.
   $.each(scores, function (studentId, units) {
-    var questions = units[unitId][lessonId];
-//     if (!questions) {
-//       return;
-//     }
-    $.each(questions, function (sequence, question) {
-      if (!lessonScores[sequence]) {
-        $.each(question['choices'], function (key, value) {
-          value.count = 0;
-          value.quid = question['question_id']
-        });
-        lessonScores[sequence] = question['choices'];
+      var questions = {};
+      var unit = units[unitId];
+      if (unit) {
+        questions = unit[lessonId];
+        if (!questions) {
+	  return lessonScores;
+	}
       }
-      $.each(question['answers'], function (key, value) {
-        if (question['question_type'] === 'SaQuestion') {
-          var weighted_score = question['weighted_score'];
-          if (weighted_score > 0) {
-            lessonScores[sequence][0].count += 1;
+      $.each(questions, function (sequence, question) {
+        console.log('for each question ' + question);
+        if (!lessonScores[sequence]) {
+          $.each(question['choices'], function (key, value) {
+            value.count = 0;
+            value.quid = question['question_id']
+          });
+          lessonScores[sequence] = question['choices'];
+        }
+        $.each(question['answers'], function (key, value) {
+          if (question['question_type'] === 'SaQuestion') {
+            var weighted_score = question['weighted_score'];
+            if (weighted_score > 0) {
+              lessonScores[sequence][0].count += 1;
+            }
+            else {
+              if (lessonScores[sequence][1] === undefined) {
+                lessonScores[sequence][1] = lessonScores[sequence][0];
+                lessonScores[sequence][1].count = 0;
+              }
+              lessonScores[sequence][1].count += 1;
+            }
+            return;
           }
           else {
-            if (lessonScores[sequence][1] === undefined) {
-              lessonScores[sequence][1] = lessonScores[sequence][0];
-              lessonScores[sequence][1].count = 0;
-            }
-            lessonScores[sequence][1].count += 1;
+            lessonScores[sequence][value].count += 1;
           }
-          return;
-        }
-        else {
-          lessonScores[sequence][value].count += 1;
-        }
+        });
       });
     });
-  });
-
   return lessonScores;
 }
 
