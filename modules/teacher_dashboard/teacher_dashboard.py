@@ -436,7 +436,7 @@ def notify_module_enabled():
     dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/popup.js')
     dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/course_section_analytics.js')
     dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/activity_score_manager.js')
-    dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/student_list_table_manager')
+    dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/student_list_table_manager.js')
     dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/student_list_table_rebuild_manager.js')
     dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/activity_score_table_manager.js')
     dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/student_score_manager.js')
