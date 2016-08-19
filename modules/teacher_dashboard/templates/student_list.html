@@ -278,6 +278,7 @@
                         <th>Email</th>
                         <th>Course/Unit Completion</th>
                         <th>Lesson Completion</th>
+                        <th>Quiz Scores</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -297,10 +298,13 @@
                                         </div>
                                     </progress>
                                     &nbsp;
-                                    <div class="student-completion-value">{{ student['course_completion'] }}%</div></td>
+                                    <div class="student-completion-value">{{ student['course_completion'] }}%</div>
+                                </td>
                                 <td class="student-lesson-completion">
                                     <span class="student-lesson-completion-percentage">N/A</span>
-                                    <span class="student-lesson-completion-score"></span>
+                                </td>
+                                <td class="student-lesson-ratio">
+                                    <span class="student-lesson-scores">N/A</span>
                                 </td>
                                 <td style="display:none;"><input  class="student-id" type="hidden" value="{{ student['email'] }}"
                                     /></td>

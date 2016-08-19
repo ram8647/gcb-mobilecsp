@@ -52,12 +52,12 @@ function rebuildCompletionColumn(students, unitSelect, lessonSelect) {
         if (lessonCompletionValue == 'N/A') {
             $(this).find('.student-lesson-completion > .student-lesson-completion-percentage').text
                 (lessonCompletionValue);
-            $(this).find('.student-lesson-completion > .student-lesson-completion-score').text('');
+            $(this).find('.student-lesson-ratio > .student-lesson-scores').text('N/A');
         }
         else {
 	  $(this).find('.student-lesson-completion > .student-lesson-completion-percentage').text(lessonCompletionValue.toPrecision(3) + '%');
             if (lessonScore) {
-                $(this).find('.student-lesson-completion > .student-lesson-completion-score').text('Score: '
+                $(this).find('.student-lesson-ratio > .student-lesson-scores').text('Score: '
                 + lessonScore.total + '/' + lessonScore.possible);
             }
         }

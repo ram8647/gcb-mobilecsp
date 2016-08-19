@@ -164,6 +164,10 @@ ActivityTable.prototype = {
     this._content = $(
       '<div class="info" style="margin: 10px;">' +
       '<!-- <h3>Question Scores for Unit: ' + unitTitle + ', Lesson: ' + lessonTitle + '</h3> -->' +
+      '<h3>Composite Answer Choices Table</h3>' +
+      '<p>This table shows a tally of the answer choices made by students in this section ' +
+      '   on all questions in the selected lesson.' +
+      '   <br />Correct choices are highlighted in grey.</p>' +
       '<table class="questions-table"></table>');
 
     this._table = this._content.find('.questions-table');
