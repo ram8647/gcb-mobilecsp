@@ -1,6 +1,23 @@
 <!-- setting up global variable for student completion values
      and the lesson dropdown
 -->
+<script>
+  $(document).ready(function() {
+    Tipped.create('.help', function(element) {
+  var help = $(element).data('id');
+  return documentation[help];
+      }, {
+        cache: false,
+          position: 'topleft'
+          });
+  });
+  
+  var documentation = { 
+    "quiz" : "Quiz scores gives the ratio of the number of correct quiz answers <b>on the first attempt</b> over the total number of quizzes in the lesson.",
+    "lesson" : "The lesson completion percentage is the percentage of quizzes <b>attempted</b>, not the percentage of quizzes correct.",
+    "unit": "The unit completion percentage is the percentage of lessons completed in that unit. Lessons that do not contain quizzes are considered completed when visited.",
+  };
+</script>
 <script type="text/javascript">
     window.course_namespace = '{{namespace}}';
     {% if section %}
@@ -46,29 +63,29 @@
         <input type="hidden" name="xsrf_token" value="{{ student_list_xsrf_token|escape }}">
 
         <div id="sl-info" name="student_list_header">
-            <div>
-                <h3>{{section.section_name}} | {{section.section_year}}</h3>
-            </div>
-            <div style="margin: 5px 15px 5px 15px;">
-                <label class="title">Course is currently </label>
-                <label class="data">
-                    <strong>
-                        {% if section.is_active == True %}
-                            Active
-                        {% else %}
-                            InActive
-                        {% endif %}
-                    </strong>
-                </label>
-            </div>
-            <div style="margin-left: 15px;">
+                <h3>{{section.section_name}} | {{section.section_year}}
+<!-- 		   <label class="title">Course is currently </label> -->
+		   &nbsp;(<label class="data">
+		       <strong>
+			   {% if section.is_active == True %}
+			       Active
+			   {% else %}
+			       InActive
+			   {% endif %}
+		       </strong>
+		   </label>
+                   )
+                </h3>
+            <br />
+                <b>Description: </b>
                 <label class="data-last">{{section.section_description}}</label>
-            </div>
+            <br />
         </div>
 
+        <br />
         <p class="description" style="font-size: 12px;">You can manage your student enrollment here, as well as view
             each students completion progress at the course, unit, and lesson level.</p>
-
+        <hr>
         <div>
             <div class="filter-controls" style="margin: 8px; margin-top: 0px; margin-bottom: 20px; float:left;">
                 <h4 style="margin-top: 5px;">Completion Level</h4>
@@ -276,9 +293,9 @@
                         <th></th>
                         <th>Name</th>
                         <th>Email</th>
-                        <th>Course/Unit Completion</th>
-                        <th>Lesson Completion</th>
-                        <th>Quiz Scores</th>
+                        <th><span class="hover help yui-wk-div" data-id="unit">Course/Unit Completion</span></th>
+                        <th><span class="hover help yui-wk-div" data-id="lesson">Lesson Completion</span></th>
+                        <th><span class="hover help yui-wk-div" data-id="quiz">Quiz Scores</span></th>
                     </tr>
                 </thead>
                 <tbody>
