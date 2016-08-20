@@ -165,9 +165,12 @@ ActivityTable.prototype = {
       '<div class="info" style="margin: 10px;">' +
       '<!-- <h3>Question Scores for Unit: ' + unitTitle + ', Lesson: ' + lessonTitle + '</h3> -->' +
       '<h3>Composite Answer Choices Table</h3>' +
-      '<p>This table shows a tally of the answer choices made by students in this section ' +
-      '   on all questions in the selected lesson.' +
-      '   <br />Correct choices are highlighted in grey.</p>' +
+      '<p>This table shows a tally of the answer choices made by students ' +
+      '   on all questions in the selected lesson. ' +
+      '   Correct answer choices are highlighted in grey.</p>' +
+      '   Questions for which fewer than 75% of answers are correct are <span style="color:#f7e594;">highlighted in yellow</span>. ' +
+      '   Questions for which fewer than 50% of answers are correct are <span style="color:#F57F8F;">highlighted in red</span>.' +
+      '   <br />'
       '<table class="questions-table"></table>');
 
     this._table = this._content.find('.questions-table');
