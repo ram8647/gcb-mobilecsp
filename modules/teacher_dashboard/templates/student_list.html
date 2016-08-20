@@ -301,7 +301,14 @@
                                     <div class="student-completion-value">{{ student['course_completion'] }}%</div>
                                 </td>
                                 <td class="student-lesson-completion">
-                                    <span class="student-lesson-completion-percentage">N/A</span>
+                                    <progress class="student-lesson-progress" value="0">
+                                        <!-- Browsers that support the progress tag will ignore this div -->
+                                        <div class="progress-bar">
+                                            <span style="width: {{ student['course_completion'] / 100 }}%;">Progress:N/A</span>
+                                        </div>
+                                    </progress>
+                                    &nbsp;
+                                    <div class="student-lesson-completion-percentage">N/A</div>
                                 </td>
                                 <td class="student-lesson-ratio">
                                     <span class="student-lesson-scores">N/A</span>

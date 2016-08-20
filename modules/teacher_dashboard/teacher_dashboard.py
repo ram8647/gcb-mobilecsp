@@ -442,6 +442,8 @@ def notify_module_enabled():
     dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/student_score_manager.js')
 
     dashboard.DashboardHandler.EXTRA_CSS_HREF_LIST.append('/modules/teacher_dashboard/resources/css/student_list.css')
+    dashboard.DashboardHandler.EXTRA_CSS_HREF_LIST.append('/modules/teacher_dashboard/resources/css/student_progress.css')
+    dashboard.DashboardHandler.EXTRA_CSS_HREF_LIST.append('/modules/teacher_dashboard/resources/css/view.css')
 
     transforms.CUSTOM_JSON_ENCODERS.append(teacher_entity.CourseSectionEntity.json_encoder)
 

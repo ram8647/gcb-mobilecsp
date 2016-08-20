@@ -231,9 +231,9 @@ EditStudentsPopup.prototype = {
         tr.append(td);
 
         td = $(
-            '<td class="student-lesson-completion">' +
-            '  <span class="student-lesson-completion-percentage">' + lessonCompletionValue + '</span>' +
-            '  <span class="student-lesson-completion-score"></span>' +
+             '<td class="student-lesson-completion">' +
+             '  <span class="student-lesson-completion-percentage">' + lessonCompletionValue + '</span>' +
+             '  <span class="student-lesson-completion-score"></span>' +
             '</td>'
         );
 

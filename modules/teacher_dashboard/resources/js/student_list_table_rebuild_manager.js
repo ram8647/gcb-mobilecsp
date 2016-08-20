@@ -45,8 +45,21 @@ function rebuildCompletionColumn(students, unitSelect, lessonSelect) {
 
         $(this).find('.student-progress').val(completionValue / 100);
         $(this).find('.student-progress').append('<div class="progress-bar">' +
-	 '<span style="width:' + (completionValue / 100).toPrecision(3) + '%;">Progress: ' + completionValue.toPrecision(3) + '%</span>' +
+	 '<span style="width:' + (completionValue / 100) + '%;">Progress: ' + completionValue.toPrecision(3) + '%</span>' +
             '</div>');
+
+        if (lessonCompletionValue != 'N/A') {
+          $(this).find('.student-lesson-progress').val(lessonCompletionValue/100);
+          $(this).find('.student-lesson-progress').append('<div class="progress-bar">' +
+	  '<span style="width:' + (lessonCompletionValue/100) + '%;">Progress: ' + (lessonCompletionValue/100).toPrecision(3) + '%</span>' +
+          '</div>');
+        } else {
+          $(this).find('.student-lesson-progress').val(0);
+          $(this).find('.student-lesson-progress').append('<div class="progress-bar">' +
+           '<span style="width:' + (0) + '%;">Progress: ' + 0 + '%</span>' +
+           '</div>');
+	}
+
         $(this).find('.student-completion-value').text(completionValue.toPrecision(3) + '%');
 
         if (lessonCompletionValue == 'N/A') {
