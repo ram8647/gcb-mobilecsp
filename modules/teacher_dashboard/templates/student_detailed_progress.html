@@ -30,6 +30,7 @@
 
             $.when(activityScoresLoaded).then(function() {
                 window.scores = activityScores.getActivityScoresByStudentId();
+                window.scores_attempts = activityScores.getAttempts();
                 $('#date-scores-cached').text(activityScores.getDateCached());
                 $('.lesson').hide();
                 $('#questions-container').empty();
@@ -144,7 +145,7 @@
       </div>
     </div>
 
-    <table class="student-detail-table gcb-pull-left" style="margin-top: 15px; width: 50%;">
+    <table class="student-detail-table gcb-pull-left" style="margin-top: 15px; width: 90%;">
       <colgroup>
         <col style="width: 30%">
         <col>
@@ -173,12 +174,33 @@
               <td>
                 <span class="lesson-completion" id="lesson-completion-{{unit['title']}}">N/A</span>
               </td>
+              <td>
+                <table id="question-attempts-{{ lesson['lesson_id'] }}" >
+                </table>
+              </td>
             </tr>
           {% endfor %}
         {% endfor %}
 
+        /* Display details of the lessons when the user clicks on a unit name. */
         {% for unit in units %}
           <script>
+	     function openModal() {
+	       // Bind Esc press to close window
+	       $(document).on("keyup.modal", function(e) {
+		 if (e.keyCode == ESC_KEY) {
+		     closeModal();
+		 }
+	       });
+	       $("#question-window").show();
+	     }
+
+	     function closeModal() {
+	       $("#question-window, #question-container > div").hide();
+	       //Remove Esc binding
+	       $(document).off("keyup.modal");
+	     }
+
             $('.{{unit['unit_id']}}').click(function(){
                 var unitId = {{unit['unit_id']}};
                 $('.{{unit['unit_id']}}-lessons').slideToggle('fast', function () {
@@ -186,17 +208,9 @@
                         $('#questions-container').empty();
                     }
                     else {
+                        /* For each lesson in the unit, summarize its progress. */
                         $('.{{unit['unit_id']}}-lessons').each(function () {
                             var lessonId = $(this).find('.lesson-id').text();
-
-                            var lessonScores = retrieveLessonScores(window.scores, unitId, lessonId);
-
-                            var activityTable = new ActivityTable(lessonScores);
-                            var table = activityTable.buildTable(
-                                unitId,
-                                lessonId,
-                                $('.' + unitId).find('.unit-title').text(),
-                                $(this).find('.lesson-title').text()).appendTo('#questions-container');
 
                             var lessonScore = CalculateLessonScore(window.studentEmail,
                                 unitId,
@@ -211,6 +225,50 @@
                                 lessonScore.total + '/' + lessonScore.possible);
                         });
                     }
+                    
+                    /* If the lesson contains questions that have been attempted by the student, 
+                       display them in a table.  */
+                    var lessonId = $(this).find('.lesson-id').text();
+                    var questions = GetQuestionScoresForStudentByLesson(window.studentEmail, unitId, lessonId, window.scores);
+                    var attempts_array  = CreateQuestionsAttemptsArray(questions, window.scores_attempts[window.studentEmail]);
+                    if (attempts_array.length > 0) {
+			var table = document.getElementById('question-attempts-' + lessonId);
+			var row = table.insertRow(0);
+			var cell = row.insertCell(0);
+			cell.innerHTML = "Questions";
+			for (var i= 0; i < attempts_array.length; i++) {  // Queston Ids
+			    var cell = row.insertCell(i+1);
+			    var id = attempts_array[i][0];
+                            cell.innerHTML = 'Q' + (i + 1) + '<div class="icon md md-visibility"></div>';
+//			    cell.innerHTML = 'Q' + id + '<div class="icon md md-visibility"></div>';
+			    $(this).find('.md-visibility').data('quid', id);
+                            //  BUG:  All icons are linked to the same quiz, the last one in the array???
+                            //  BUG:  Is it that all md-visibility have the same class name? 
+			    $(this).find('.md-visibility').click(function() {
+				openModal();
+				var params = {
+				    action: 'question_preview',
+				    quid: $(this).data('quid')
+				};
+				$('#question-preview').html($('<iframe />').attr(
+				    {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show();
+			    });
+			}
+			row = table.insertRow(1);
+			cell = row.insertCell(0);
+			cell.innerHTML = "Attempts";
+			for (var i= 0; i < attempts_array.length; i++) {
+			    var cell = row.insertCell(i+1);
+			    cell.innerHTML = attempts_array[i][1];
+			}
+			row = table.insertRow(2);
+			cell = row.insertCell(0);
+			cell.innerHTML = "Scores";
+			for (var i= 0; i < attempts_array.length; i++) {
+			    var cell = row.insertCell(i+1);
+			    cell.innerHTML = attempts_array[i][2];
+			}
+                    }
                 });
             });
           </script>
@@ -218,8 +276,6 @@
       {% endif %}
 
     </table>
-
-    <div id="questions-container"></div>
 
     <div id="question-window" style="display: none;">
       <div id="question-background"></div>

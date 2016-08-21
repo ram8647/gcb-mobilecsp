@@ -43,6 +43,28 @@ function calculateLessonCompletion(studentId, unitId, lessonId, scores) {
     return completionPercent;
 }
 
+/**
+ *  Creates an array of question attempts for a given lesson.
+ *  @param questions, the questions associated with the lesson.
+ *  @param attempts, a dict of the questions attempted by the student
+ *  @return An n x 3 array, containing [id, #attempts, score] for each
+ *   of the n questions in the lesson. 
+ */
+function createQuestionsAttemptsArray(questions, attempts) {
+    var question_attempts = [];
+    $.each(questions, function (key, value) {
+        var id = value['question_id'];
+        var score = value['weighted_score'];
+        if (id in attempts) {
+	  question_attempts.push([id, attempts[id], score]);
+	} else {
+	  question_attempts.push([id, 0, 0]);
+	}
+    });
+    return question_attempts;;
+}
+
+
 function getQuestionScoresForStudentByLesson(studentId, unitId, lessonId, scores) {
     var questions = [];
 
@@ -57,5 +79,7 @@ function getQuestionScoresForStudentByLesson(studentId, unitId, lessonId, scores
     return questions;
 }
 
+window.GetQuestionScoresForStudentByLesson = getQuestionScoresForStudentByLesson;
+window.CreateQuestionsAttemptsArray = createQuestionsAttemptsArray;
 window.CalculateLessonScore = calculateLessonScore;
 window.CalculateLessonCompletion = calculateLessonCompletion;

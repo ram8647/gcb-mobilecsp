@@ -12,8 +12,9 @@ from models import event_transforms
 
 from models.models import QuestionDAO
 from models.models import QuestionGroupDAO
-
 from models.models import MemcacheManager
+
+from models.progress import UnitLessonCompletionTracker
 
 
 class ActivityScoreParser(jobs.MapReduceJob):
@@ -22,6 +23,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
         """holds activity score info unit -> lesson -> question"""
         self.activity_scores = { }
         self.params = {}
+        self.num_attempts_dict = { }
 
     @staticmethod
     def get_description():
@@ -30,6 +32,9 @@ class ActivityScoreParser(jobs.MapReduceJob):
     @staticmethod
     def entity_class():
         return EventEntity
+
+    def get_num_attempts_dict():
+        return _num_attempts_dict
 
     @classmethod
     def _get_questions_by_question_id(cls, questions_by_usage_id):
@@ -88,12 +93,23 @@ class ActivityScoreParser(jobs.MapReduceJob):
             #add score to right lesson
             temp_index = data['instanceid']
             logging.info('***********RAM************** data[instanceid] = ' + temp_index)
+
             try: 
                 question_info = questions[temp_index]
                 unit_answers = student_answers.get(question_info['unit'], {})
                 lesson_answers = unit_answers.get(question_info['lesson'], {})
 
+
                 for answer in answers:
+                    # Counts the number of attempts for each answer by student
+                    logging.info('***RAM*** answer.question.id = ' + str(answer.question_id) + ' type= ' + str(answer.question_type) + ' s= ' + student.email)
+                    if not student.email in self.num_attempts_dict:
+                        self.num_attempts_dict[student.email] = {}
+
+                    if not answer.question_id in self.num_attempts_dict[student.email]:
+                        self.num_attempts_dict[student.email][answer.question_id] = 1
+                    else:
+                        self.num_attempts_dict[student.email][answer.question_id] += 1
                     question_answer_dict = {}
                     question_answer_dict['unit_id'] = answer.unit_id
                     question_answer_dict['lesson_id'] = answer.lesson_id
@@ -119,6 +135,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 logging.warning('***********RAM************** bad key ' + temp_index)
                 self.activity_scores = { }
 
+            logging.info('***RAM*** num_attempts_dict ' + str(self.num_attempts_dict))
         return self.activity_scores
 
     def build_missing_score(self, question, question_info, student_id, unit_id, lesson_id, sequence=-1):
@@ -206,6 +223,17 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     self.build_missing_score(question, question_info, student_id, unit_id, lesson_id)
 
     @classmethod
+    def get_student_completion_data(cls, course):
+        """Retrieves student completion data for the course."""
+
+        logging.warning('***RAM*** get_student_completion_data ' + str(course))
+        completion_tracker = UnitLessonCompletionTracker(course)
+        questions_dict = completion_tracker.get_id_to_questions_dict()
+        for q in questions_dict:
+            logging.warning('***RAM*** key: ' + q)
+            logging.warning('***RAM*** dict ' + str(questions_dict[q]))
+
+    @classmethod
     def get_activity_scores(cls, student_user_ids, course, force_refresh = False):
         """Retrieve activity data for student using EventEntity"""
 
@@ -235,6 +263,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 student = Student.get_by_user_id(user_id)
                 
                 cached_student_data['scores'] = activityParser.activity_scores.get(student.email, {})
+                cached_student_data['attempts'] = activityParser.num_attempts_dict.get(student.email, {})
                 MemcacheManager.set(cls._memcache_key_for_student(student.email),cached_student_data)
         else:
             uncached_students = []
@@ -248,6 +277,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     if scores_for_student:
                         cached_date = scores_for_student['date']
                         activityParser.activity_scores[student_id] = scores_for_student['scores']
+                        activityParser.num_attempts_dict[student_id] = scores_for_student['scores']
                     else:
                         uncached_students.append(student_id)
             if len(uncached_students) > 0:
@@ -280,6 +310,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
         score_data = {}
         score_data['date'] = cached_date
         score_data['scores'] = activityParser.activity_scores
+        score_data['attempts'] = activityParser.num_attempts_dict
+        logging.info('***RAM*** get_activity_scores ' + str(score_data['attempts']))
 
         return score_data
 

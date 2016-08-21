@@ -1,5 +1,7 @@
 __author__ = 'ehiller@css.edu'
 
+import logging
+
 import teacher_entity
 from teacher_entity import Teacher
 
@@ -69,8 +71,11 @@ class ActivityScoreRestHandler(BaseRESTHandler):
 
         payload_dict = {
             'scores': scores['scores'],
-            'dateCached': scores['date'].strftime("%B %d, %Y %H:%M:%S")
+            'dateCached': scores['date'].strftime("%B %d, %Y %H:%M:%S"),
+            'attempts':scores['attempts']
         }
+
+        logging.info('***RAM*** rest handler attempts ' + str(scores['attempts']))
 
         transforms.send_json_response(
             self, 200, '', payload_dict=payload_dict,

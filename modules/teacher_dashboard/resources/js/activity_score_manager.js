@@ -20,6 +20,7 @@ function parseAjaxResponse(s) {
 function ActivityScores() {
   this._activityScoresByStudentId = {};
   this._dateCached = undefined;
+  this._attempts = {}
   this._xsrfToken = null;
 }
 
@@ -75,14 +76,19 @@ ActivityScores.prototype = {
   _updateFromPayload: function(payload) {
     var activityScores = payload['scores'];
     var dateCached = payload['dateCached'];
+    var attempts = payload['attempts'];
     this._activityScoresByStudentId = activityScores;
     this._dateCached = dateCached;
+    this._attempts = attempts;
   },
   getActivityScoresByStudentId: function () {
     return this._activityScoresByStudentId;
   },
   getDateCached: function () {
     return this._dateCached;
+  },
+  getAttempts: function () {
+    return this._attempts;
   }
 }
 

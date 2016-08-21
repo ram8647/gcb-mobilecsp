@@ -170,7 +170,7 @@ ActivityTable.prototype = {
       '   Correct answer choices are highlighted in grey.</p>' +
       '   Questions for which fewer than 75% of answers are correct are <span style="color:#f7e594;">highlighted in yellow</span>. ' +
       '   Questions for which fewer than 50% of answers are correct are <span style="color:#F57F8F;">highlighted in red</span>.' +
-      '   <br />'
+      '   <br />' + 
       '<table class="questions-table"></table>');
 
     this._table = this._content.find('.questions-table');
