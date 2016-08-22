@@ -100,8 +100,8 @@ Basic outline
 
 -- Add teachers_dashboard directory to the modules directory
 -- Add modules.teacher_dashboard.teacher_dashboard to custom.yaml
--- Import module in main.py:  from modules.khanex import khanex
--- Register khanex module in main.py: khanex.register_module().enable()
+-- Import module in main.py:  from modules.teacher_dashboard import teacher_dashboard
+-- Register teacher_dashboard module in main.py: teacher_dashboard.register_module().enable()
 -- In models.py Replace the user_id property in the EventEntity class to the following line
    user_id = db.StringProperty(indexed=True)
 
