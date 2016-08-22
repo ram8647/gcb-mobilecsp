@@ -1,0 +1,20 @@
+<script>
+  $(function() {
+    window.course_namespace = '{{ namespace }}';
+    cbShowMsg('Loading...');
+    var sectionList = new SectionList();
+
+    var sectionListLoaded = $.Deferred(function(def) {
+      sectionList.load(function() {
+        cbHideMsg();
+        def.resolve()
+      });
+    });
+    $.when(sectionListLoaded).then(function() {
+      var sectionTable = new SectionTable(sectionList);
+      sectionTable.buildTable().appendTo('#sections-container');
+    });
+  });
+</script>
+
+<div id="sections-container"></div>

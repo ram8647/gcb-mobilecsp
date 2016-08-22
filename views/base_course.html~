@@ -54,6 +54,14 @@
             <a href="forum">{{ gettext('Forum') }}</a>
           </li>
         {% endif %}
+
+       <!-- custom code: Resources  -->
+        <li {% if navbar.resources %}class='active'{% endif %}>
+          {# I18N: Navbar tab. #}
+          <a href="resources">{{ gettext('Resources') }}</a>
+        </li>
+      <!--  end custom code -->
+
         {% if not transient_student %}
           <li {% if navbar.progress %}class='active'{% endif %}>
             {# I18N: Navbar tab. #}

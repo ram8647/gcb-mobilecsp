@@ -34,6 +34,7 @@ from models import student_work
 from modules.khanex import khanex
 from modules.quizly import quizly
 from modules.teacher_dashboard import teacher_dashboard
+from modules.teacher import teacher
 
 # Set the default users service before we do anything else.
 users.UsersServiceManager.set(users.AppEnginePassthroughUsersService)
@@ -53,6 +54,7 @@ custom_modules.register_core_module(
 quizly.register_module().enable()
 khanex.register_module().enable()
 teacher_dashboard.register_module().enable()
+teacher.register_module().enable()
 
 # Register core components for data removal.
 models.register_for_data_removal()
