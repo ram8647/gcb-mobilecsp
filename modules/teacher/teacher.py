@@ -45,9 +45,11 @@ from google.appengine.ext import db
 
 MODULE_NAME = 'teacher'
 MODULE_TITLE = 'Teacher'
-TEMPLATE_DIR = os.path.join(
-    appengine_config.BUNDLE_ROOT, 'modules', MODULE_NAME, 'templates')
 
+#Setup paths and directories for templates and resources
+RESOURCES_PATH = '/modules/teacher/resources'
+TEMPLATES_DIR = os.path.join(
+    appengine_config.BUNDLE_ROOT, 'modules', MODULE_NAME, 'templates')
 
 class TeacherRights(object):
     """Manages view/edit rights for teachers."""
@@ -132,9 +134,26 @@ class TeacherStudentHandler(
         TeacherHandlerMixin, utils.BaseHandler,
         utils.ReflectiveRequestHandler):
     URL = '/teacher'
-    default_action = 'list'
+    default_action = 'sections'
+#    default_action = 'list'
     get_actions = [default_action]
     post_actions = []
+
+    def get_sections(self):
+        """Renders Sections view. Javascript handles getting course sections and building the view"""
+        template_values = {}
+        template_values['namespace'] = self.get_course()._namespace.replace('ns_', '')
+        template_values['ralph'] = 'ralphie'
+
+        main_content = self.get_template(
+            'teacher_sections.html', [TEMPLATES_DIR]).render(template_values)
+
+        self.response.write(main_content)
+
+    def _render_page(self, template):
+        self.template_value['navbar'] = {'teacher': True}
+        self.render(template)
+
 
     def get_list(self):
         """Shows a list of teachers."""
@@ -191,7 +210,7 @@ class MyTeacherDashboardHandler(
         items = TeacherRights.apply_rights(self, items)
 
         main_content = self.get_template(
-            'teacher_list.html', [TEMPLATE_DIR]).render({
+            'teacher_list.html', [TEMPLATES_DIR]).render({
                 'teachers': self.format_items_for_template(items),
             })
 
@@ -437,6 +456,14 @@ class TeacherEntity(entities.BaseEntity):
         MemcacheManager.delete(self.memcache_key)
 
 
+def notify_module_enabled():
+    """Handles things after module has been enabled."""
+
+    dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/popup.js')
+
+#    transforms.CUSTOM_JSON_ENCODERS.append(teacher_entity.CourseSectionEntity.json_encoder)
+
+
 custom_module = None
 
 
@@ -446,6 +473,21 @@ def register_module():
     handlers = [
         (handler.URL, handler) for handler in
         [TeacherStudentHandler, MyTeacherDashboardHandler]]
+
+#    global_routes = []
+    dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/popup.js')
+
+    global_routes = [
+        (os.path.join(RESOURCES_PATH, 'js', '.*'), tags.JQueryHandler),
+        (os.path.join(RESOURCES_PATH, '.*'), tags.ResourcesHandler),
+        (RESOURCES_PATH + '/js/popup.js', tags.IifeHandler),
+        (RESOURCES_PATH + '/js/course_section_analytics.js', tags.IifeHandler),
+        (RESOURCES_PATH + '/js/activity_score_manager.js', tags.IifeHandler),
+        (RESOURCES_PATH + '/js/student_list_table_manager', tags.IifeHandler),
+        (RESOURCES_PATH + '/js/student_list_table_rebuild_manager.js', tags.IifeHandler),
+        (RESOURCES_PATH + '/js/activity_score_table_manager.js', tags.IifeHandler),
+        (RESOURCES_PATH + '/js/student_score_manager.js', tags.IifeHandler)
+    ]
 
     dashboard.DashboardHandler.add_sub_nav_mapping(
         'analytics', MODULE_NAME, MODULE_TITLE,
@@ -457,5 +499,7 @@ def register_module():
     custom_module = custom_modules.Module(
         MODULE_TITLE,
         'A set of pages for managing course teachers.',
-        [], handlers)
+        global_routes, handlers,
+        notify_module_enabled=notify_module_enabled)
+
     return custom_module
