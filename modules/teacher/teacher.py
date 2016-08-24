@@ -1,4 +1,4 @@
-# Copyright 2012 Google Inc. All Rights Reserved.
+# Copyright 2016 Mobile CSP Project. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Classes and methods to create and manage Teachers."""
+"""Classes and methods to create and manage Teachers. 
+   Revised from the announcements module.   """
 
 __author__ = 'Saifu Angto (saifu@google.com)'
-
+__author__ = 'Ralph Morelli (ram8647@gmail.com)'
 
 import cgi
 import datetime
 import os
 import urllib
+import logging
 
 import jinja2
 
@@ -42,6 +44,14 @@ from modules.dashboard import dashboard
 from modules.oeditor import oeditor
 
 from google.appengine.ext import db
+from google.appengine.api import users
+
+# Our modules classes
+from course_entity import CourseSectionEntity
+from course_entity import SectionItemRESTHandler
+from teacher_entity import TeacherEntity
+from teacher_entity import TeacherItemRESTHandler
+from teacher_entity import TeacherRights
 
 MODULE_NAME = 'teacher'
 MODULE_TITLE = 'Teacher'
@@ -51,37 +61,7 @@ RESOURCES_PATH = '/modules/teacher/resources'
 TEMPLATES_DIR = os.path.join(
     appengine_config.BUNDLE_ROOT, 'modules', MODULE_NAME, 'templates')
 
-class TeacherRights(object):
-    """Manages view/edit rights for teachers."""
-
-    @classmethod
-    def can_view(cls, unused_handler):
-        return True
-
-    @classmethod
-    def can_edit(cls, handler):
-        return roles.Roles.is_course_admin(handler.app_context)
-
-    @classmethod
-    def can_delete(cls, handler):
-        return cls.can_edit(handler)
-
-    @classmethod
-    def can_add(cls, handler):
-        return cls.can_edit(handler)
-
-    @classmethod
-    def apply_rights(cls, handler, items):
-        """Filter out items that current user can't see."""
-        if TeacherRights.can_edit(handler):
-            return items
-
-        allowed = []
-        for item in items:
-            allowed.append(item)
-
-        return allowed
-
+SECTIONS_TEMPLATE = os.path.join(TEMPLATES_DIR, 'teacher_dashboard.html')
 
 class TeacherHandlerMixin(object):
     def get_teacher_action_url(self, action, key=None):
@@ -91,6 +71,14 @@ class TeacherHandlerMixin(object):
         return self.canonicalize_url(
             '{}?{}'.format(
                 MyTeacherDashboardHandler.URL, urllib.urlencode(args)))
+
+    def get_section_action_url(self, action, key=None):
+        args = {'action': action}
+        if key:
+            args['key'] = key
+        return self.canonicalize_url(
+            '{}?{}'.format(
+                TeacherStudentHandler.SECTION_URL, urllib.urlencode(args)))
 
     def format_items_for_template(self, items):
         """Formats a list of entities into template values."""
@@ -107,8 +95,7 @@ class TeacherHandlerMixin(object):
             # add 'edit' actions
             if TeacherRights.can_edit(self):
                 item['edit_action'] = self.get_teacher_action_url(
-                    MyTeacherDashboardHandler.EDIT_ACTION, key=item['key'])
-
+                     MyTeacherDashboardHandler.EDIT_ACTION, key=item['key'])
                 item['delete_xsrf_token'] = self.create_xsrf_token(
                     MyTeacherDashboardHandler.DELETE_ACTION)
                 item['delete_action'] = self.get_teacher_action_url(
@@ -129,58 +116,170 @@ class TeacherHandlerMixin(object):
 
         return output
 
+    def format_template(self, sections):
+        """Formats the template for the main page."""
+        template_sections = []
+        if sections:
+            for section in sections:
+                section = transforms.entity_to_dict(section)
+
+                logging.debug('***RAM*** format template section = ' + str(section))
+
+                # add 'edit' actions to each section
+                if TeacherRights.can_edit(self):
+                    section['edit_action'] = self.get_section_action_url(
+                        TeacherStudentHandler.EDIT_SECTION, key=section['key'])
+
+                    section['delete_xsrf_token'] = self.create_xsrf_token(
+                        TeacherStudentHandler.DELETE_SECTION)
+                    section['delete_action'] = self.get_section_action_url(
+                        TeacherStudentHandler.DELETE_SECTION,
+                        key=section['key'])
+                template_sections.append(section) 
+
+        output = {}
+        output['sections'] = template_sections
+        output['newsection_xsrf_token'] = self.create_xsrf_token(
+            TeacherStudentHandler.ADD_SECTION)
+        output['add_section'] = self.get_section_action_url(
+            TeacherStudentHandler.ADD_SECTION)
+
+
+        # add 'admin' action -- to add new teachers
+        if TeacherRights.can_edit(self):
+            output['is_admin'] = True
+            output['xsrf_token'] = self.create_xsrf_token(
+                MyTeacherDashboardHandler.ADD_ACTION)
+#             output['add_xsrf_token'] = self.create_xsrf_token(
+#                 MyTeacherDashboardHandler.ADD_ACTION)
+            output['add_action'] = self.get_teacher_action_url(
+                MyTeacherDashboardHandler.ADD_ACTION)
+
+        return output
 
 class TeacherStudentHandler(
         TeacherHandlerMixin, utils.BaseHandler,
         utils.ReflectiveRequestHandler):
-    URL = '/teacher'
-    default_action = 'sections'
-#    default_action = 'list'
-    get_actions = [default_action]
-    post_actions = []
 
-    def get_sections(self):
-        """Renders Sections view. Javascript handles getting course sections and building the view"""
-        template_values = {}
-        template_values['namespace'] = self.get_course()._namespace.replace('ns_', '')
-        template_values['ralph'] = 'ralphie'
+    LIST_SECTION = 'edit_sections'
+    EDIT_SECTION = 'edit_section'
+    DELETE_SECTION = 'delete_section'
+    ADD_SECTION = 'add_section'
 
-        main_content = self.get_template(
-            'teacher_sections.html', [TEMPLATES_DIR]).render(template_values)
+    SECTION_LINK_URL = 'edit_sections'
+    SECTION_URL = '/{}'.format(SECTION_LINK_URL)
+    SECTION_LIST_URL = '{}?action={}'.format(SECTION_LINK_URL, LIST_SECTION)
 
-        self.response.write(main_content)
+    default_action = 'edit_sections'
 
-    def _render_page(self, template):
-        self.template_value['navbar'] = {'teacher': True}
-        self.render(template)
-
-
-    def get_list(self):
-        """Shows a list of teachers."""
-        student = None
-        user = self.personalize_page_and_get_user()
-        transient_student = False
-        if user is None:
-            transient_student = True
-        else:
-            student = Student.get_enrolled_student_by_user(user)
-            if not student:
-                transient_student = True
-        self.template_value['transient_student'] = transient_student
-        items = TeacherEntity.get_teachers()
-        items = TeacherRights.apply_rights(self, items)
-        if not roles.Roles.is_course_admin(self.get_course().app_context):
-            items = models.LabelDAO.apply_course_track_labels_to_student_labels(
-                self.get_course(), student, items)
-
-        self.template_value['teachers'] = self.format_items_for_template(
-            items)
-        self._render()
+    get_actions = [default_action, LIST_SECTION, EDIT_SECTION, ADD_SECTION]
+    post_actions = [DELETE_SECTION]
 
     def _render(self):
         self.template_value['navbar'] = {'teacher': True}
-        self.render('teachers.html')
+        self.render(SECTIONS_TEMPLATE)
+#        self.render('teacher_dashboard.html')
 
+    def get_edit_sections(self):
+        """Shows a list of teachers."""
+        sections = CourseSectionEntity.get_sections()
+        sections = TeacherRights.apply_rights(self, sections)
+
+        logging.debug('***RAM** get_edit_sections')
+
+        self.template_value['teacher'] = self.format_template(sections)
+        self._render()
+
+    def get_add_section(self):
+        """Shows an editor for a section."""
+        if not TeacherRights.can_add_section(self):
+            self.error(401)
+            return
+
+        logging.debug('***RAM** get_add_section')
+        entity = CourseSectionEntity.make('', '', '', True)
+        entity.put()
+
+        self.redirect(self.get_section_action_url(
+            self.EDIT_SECTION, key=entity.key()))
+
+    def get_edit_section(self):
+        """Shows an editor for a section."""
+
+        key = self.request.get('key')
+
+        schema = SectionItemRESTHandler.SCHEMA()
+
+        exit_url = self.canonicalize_url('/{}'.format(self.SECTION_LIST_URL))
+        rest_url = self.canonicalize_url('/rest/section/item')
+        form_html = oeditor.ObjectEditor.get_html_for(
+            self,
+            schema.get_json_schema(),
+            schema.get_schema_dict(),
+            key, rest_url, exit_url,
+            delete_method='delete',
+            delete_message='Are you sure you want to delete this section?',
+            delete_url=self._get_delete_url(
+                SectionItemRESTHandler.URL, key, 'section-delete'),
+            display_types=schema.get_display_types())
+
+        logging.debug('***RAM** get_edit_section rendering page')
+        self.template_value['main_content'] = form_html;
+        self._render()
+
+    def post_delete_section(self):
+        """Deletes a section."""
+        if not TeacherRights.can_delete_section(self):
+            self.error(401)
+            return
+
+        logging.debug('***RAM** post_delete_section')
+        key = self.request.get('key')
+        entity = CourseSectionEntity.get(key)
+        if entity:
+            entity.delete()
+        self.redirect('/{}'.format(self.SECTION_LIST_URL))
+
+
+    def get_delete_section(self):
+        """Deletes a section."""
+        if not TeacherRights.can_delete_section(self):
+            self.error(401)
+            return
+
+        logging.debug('***RAM** get_delete_section')
+        key = self.request.get('key')
+        entity = CourseSectionEntity.get(key)
+        if entity:
+            entity.delete()
+        self.redirect('/{}'.format(self.SECTION_LIST_URL))
+
+
+    def post_add_section(self):
+        """Adds a new section and redirects to an editor for it."""
+        if not TeacherRights.can_add_section(self):
+            self.error(401)
+            return
+
+        logging.debug('***RAM** post_add_section')
+        entity = CourseSectionEntity.make('', '', '',True)
+        entity.put()
+
+        self.redirect(self.get_section_action_url(
+            self.EDIT_SECTION, key=entity.key()))
+
+    def _get_delete_url(self, base_url, key, xsrf_token_name):
+        return '%s?%s' % (
+            self.canonicalize_url(base_url),
+            urllib.urlencode({
+                'key': key,
+                'xsrf_token': cgi.escape(
+                    self.create_xsrf_token(xsrf_token_name)),
+            }))
+
+    def render_page(self, template):
+        self.template_value['navbar'] = {'teacher': True}
+        self.render(template)
 
 class MyTeacherDashboardHandler(
         TeacherHandlerMixin, dashboard.DashboardHandler):
@@ -201,14 +300,18 @@ class MyTeacherDashboardHandler(
     @classmethod
     def get_child_routes(cls):
         """Add child handlers for REST."""
+        logging.debug('***RAM** get_child_routes')
         return [
-            (TeacherItemRESTHandler.URL, TeacherItemRESTHandler)]
+            (TeacherItemRESTHandler.URL, TeacherItemRESTHandler),
+            (SectionItemRESTHandler.URL, SectionItemRESTHandler)
+            ]
 
     def get_edit_teachers(self):
         """Shows a list of teachers."""
         items = TeacherEntity.get_teachers()
         items = TeacherRights.apply_rights(self, items)
 
+        logging.debug('***RAM** get_edit_teachers')
         main_content = self.get_template(
             'teacher_list.html', [TEMPLATES_DIR]).render({
                 'teachers': self.format_items_for_template(items),
@@ -219,7 +322,7 @@ class MyTeacherDashboardHandler(
             'main_content': jinja2.utils.Markup(main_content)})
 
     def get_edit_teacher(self):
-        """Shows an editor for an teacher."""
+        """Shows an editor for a teacher."""
 
         key = self.request.get('key')
 
@@ -238,19 +341,11 @@ class MyTeacherDashboardHandler(
                 TeacherItemRESTHandler.URL, key, 'teacher-delete'),
             display_types=schema.get_display_types())
 
+        logging.debug('***RAM** get_edit_teacher rendering page')
         self.render_page({
             'main_content': form_html,
             'page_title': 'Edit Teacher',
         }, in_action=self.LIST_ACTION)
-
-    def _get_delete_url(self, base_url, key, xsrf_token_name):
-        return '%s?%s' % (
-            self.canonicalize_url(base_url),
-            urllib.urlencode({
-                'key': key,
-                'xsrf_token': cgi.escape(
-                    self.create_xsrf_token(xsrf_token_name)),
-            }))
 
     def post_delete_teacher(self):
         """Deletes an teacher."""
@@ -258,6 +353,7 @@ class MyTeacherDashboardHandler(
             self.error(401)
             return
 
+        logging.debug('***RAM** post_delete_teacher')
         key = self.request.get('key')
         entity = TeacherEntity.get(key)
         if entity:
@@ -270,198 +366,26 @@ class MyTeacherDashboardHandler(
             self.error(401)
             return
 
-        entity = TeacherEntity.make('New Teacher', '', True)
+        logging.debug('***RAM** post_add_teacher')
+        entity = TeacherEntity.make('', '', '')
         entity.put()
 
         self.redirect(self.get_teacher_action_url(
             self.EDIT_ACTION, key=entity.key()))
 
+    def _get_delete_url(self, base_url, key, xsrf_token_name):
+        return '%s?%s' % (
+            self.canonicalize_url(base_url),
+            urllib.urlencode({
+                'key': key,
+                'xsrf_token': cgi.escape(
+                    self.create_xsrf_token(xsrf_token_name)),
+            }))
 
-class TeacherItemRESTHandler(utils.BaseRESTHandler):
-    """Provides REST API for an teacher."""
-
-    URL = '/rest/teacher/item'
-
-    @classmethod
-    def SCHEMA(cls):
-        schema = schema_fields.FieldRegistry('Teacher',
-            extra_schema_dict_values={
-                'className': 'inputEx-Group new-form-layout'})
-        schema.add_property(schema_fields.SchemaField(
-            'key', 'ID', 'string', editable=False, hidden=True))
-        schema.add_property(schema_fields.SchemaField(
-            'name', 'Name', 'string',
-            description=messages.TEACHER_NAME_DESCRIPTION))
-        schema.add_property(schema_fields.SchemaField(
-            'email', 'Email', 'string',
-            description=messages.TEACHER_EMAIL_DESCRIPTION))
-        schema.add_property(schema_fields.SchemaField(
-            'school', 'School', 'string',
-            description=messages.TEACHER_SCHOOL_DESCRIPTION))
-        schema.add_property(schema_fields.SchemaField(
-            'date', 'Date', 'datetime',
-            description=messages.TEACHER_DATE_DESCRIPTION,
-            extra_schema_dict_values={
-                '_type': 'datetime',
-                'className': 'inputEx-CombineField gcb-datetime '
-                'inputEx-fieldWrapper date-only inputEx-required'}))
-        resources_display.LabelGroupsHelper.add_labels_schema_fields(
-            schema, 'teacher')
-        return schema
-
-    def get(self):
-        """Handles REST GET verb and returns an object as JSON payload."""
-        key = self.request.get('key')
-
-        try:
-            entity = TeacherEntity.get(key)
-        except db.BadKeyError:
-            entity = None
-
-        if not entity:
-            transforms.send_json_response(
-                self, 404, 'Object not found.', {'key': key})
-            return
-
-        viewable = TeacherRights.apply_rights(self, [entity])
-        if not viewable:
-            transforms.send_json_response(
-                self, 401, 'Access denied.', {'key': key})
-            return
-        entity = viewable[0]
-
-        schema = TeacherItemRESTHandler.SCHEMA()
-
-        entity_dict = transforms.entity_to_dict(entity)
-
-        # Format the internal date object as ISO 8601 datetime, with time
-        # defaulting to 00:00:00
-        date = entity_dict['date']
-        date = datetime.datetime(date.year, date.month, date.day)
-        entity_dict['date'] = date
-
-        entity_dict.update(
-            resources_display.LabelGroupsHelper.labels_to_field_data(
-                common_utils.text_to_list(entity.labels)))
-
-        json_payload = transforms.dict_to_json(entity_dict)
-        transforms.send_json_response(
-            self, 200, 'Success.',
-            payload_dict=json_payload,
-            xsrf_token=utils.XsrfTokenManager.create_xsrf_token(
-                'teacher-put'))
-
-    def put(self):
-        """Handles REST PUT verb with JSON payload."""
-        request = transforms.loads(self.request.get('request'))
-        key = request.get('key')
-
-        if not self.assert_xsrf_token_or_fail(
-                request, 'teacher-put', {'key': key}):
-            return
-
-        if not TeacherRights.can_edit(self):
-            transforms.send_json_response(
-                self, 401, 'Access denied.', {'key': key})
-            return
-
-        entity = TeacherEntity.get(key)
-        if not entity:
-            transforms.send_json_response(
-                self, 404, 'Object not found.', {'key': key})
-            return
-
-        schema = TeacherItemRESTHandler.SCHEMA()
-
-        payload = request.get('payload')
-        update_dict = transforms.json_to_dict(
-            transforms.loads(payload), schema.get_json_schema_dict())
-
-        # The datetime widget returns a datetime object and we need a UTC date.
-        update_dict['date'] = update_dict['date'].date()
-
-        entity.labels = common_utils.list_to_text(
-            resources_display.LabelGroupsHelper.field_data_to_labels(
-                update_dict))
-        resources_display.LabelGroupsHelper.remove_label_field_data(update_dict)
-
-        transforms.dict_to_entity(entity, update_dict)
-
-        entity.put()
-
-        transforms.send_json_response(self, 200, 'Saved.')
-
-    def delete(self):
-        """Deletes an teacher."""
-        key = self.request.get('key')
-
-        if not self.assert_xsrf_token_or_fail(
-                self.request, 'teacher-delete', {'key': key}):
-            return
-
-        if not TeacherRights.can_delete(self):
-            self.error(401)
-            return
-
-        entity = TeacherEntity.get(key)
-        if not entity:
-            transforms.send_json_response(
-                self, 404, 'Object not found.', {'key': key})
-            return
-
-        entity.delete()
-
-        transforms.send_json_response(self, 200, 'Deleted.')
-
-class TeacherEntity(entities.BaseEntity):
-    """A class that represents a persistent database entity of teacher."""
-    name = db.StringProperty(indexed=False)
-    date = db.DateProperty()
-    email = db.TextProperty(indexed=False)
-    school = db.TextProperty(indexed=False)
-    labels = db.StringProperty(indexed=False)
-
-    memcache_key = 'teachers'
-
-    @classmethod
-    def get_teachers(cls, allow_cached=True):
-        items = MemcacheManager.get(cls.memcache_key)
-        if not allow_cached or items is None:
-            items = TeacherEntity.all().order('-date').fetch(1000)
-
-            # TODO(psimakov): prepare to exceed 1MB max item size
-            # read more here: http://stackoverflow.com
-            #   /questions/5081502/memcache-1-mb-limit-in-google-app-engine
-            MemcacheManager.set(cls.memcache_key, items)
-        return items
-
-    @classmethod
-    def make(cls, name, email, school):
-        entity = cls()
-        entity.name = name
-        entity.date = datetime.datetime.now().date()
-        entity.email = email
-        entity.school = school
-        return entity
-
-    def put(self):
-        """Do the normal put() and also invalidate memcache."""
-        result = super(TeacherEntity, self).put()
-        MemcacheManager.delete(self.memcache_key)
-        return result
-
-    def delete(self):
-        """Do the normal delete() and invalidate memcache."""
-        super(TeacherEntity, self).delete()
-        MemcacheManager.delete(self.memcache_key)
 
 
 def notify_module_enabled():
     """Handles things after module has been enabled."""
-
-    dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/popup.js')
-
-#    transforms.CUSTOM_JSON_ENCODERS.append(teacher_entity.CourseSectionEntity.json_encoder)
 
 
 custom_module = None
@@ -471,22 +395,11 @@ def register_module():
     """Registers this module in the registry."""
 
     handlers = [
-        (handler.URL, handler) for handler in
-        [TeacherStudentHandler, MyTeacherDashboardHandler]]
-
-#    global_routes = []
-    dashboard.DashboardHandler.EXTRA_JS_HREF_LIST.append('/modules/teacher_dashboard/resources/js/popup.js')
+        (MyTeacherDashboardHandler.URL, MyTeacherDashboardHandler),
+        (TeacherStudentHandler.SECTION_URL, TeacherStudentHandler)
+    ]
 
     global_routes = [
-        (os.path.join(RESOURCES_PATH, 'js', '.*'), tags.JQueryHandler),
-        (os.path.join(RESOURCES_PATH, '.*'), tags.ResourcesHandler),
-        (RESOURCES_PATH + '/js/popup.js', tags.IifeHandler),
-        (RESOURCES_PATH + '/js/course_section_analytics.js', tags.IifeHandler),
-        (RESOURCES_PATH + '/js/activity_score_manager.js', tags.IifeHandler),
-        (RESOURCES_PATH + '/js/student_list_table_manager', tags.IifeHandler),
-        (RESOURCES_PATH + '/js/student_list_table_rebuild_manager.js', tags.IifeHandler),
-        (RESOURCES_PATH + '/js/activity_score_table_manager.js', tags.IifeHandler),
-        (RESOURCES_PATH + '/js/student_score_manager.js', tags.IifeHandler)
     ]
 
     dashboard.DashboardHandler.add_sub_nav_mapping(

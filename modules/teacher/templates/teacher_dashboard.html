@@ -1,0 +1,126 @@
+{% extends 'base_course.html' %}
+
+{% block subtitle %}
+  {# I18N: Title of the webpage. #}
+  - {{ gettext('Teacher Dashboard') }}
+{% endblock subtitle %}
+
+{% block assets %}
+  {{ super() }}
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+{% endblock %}
+
+{% block top_content %}
+{% endblock %}
+
+{% block main_content %}
+{{ main_content }}
+<div id="gcb-main">
+  <div class="gcb-article tab-content">
+    <div class="gcb-aside">
+      {% if teacher %}
+       <table>
+        <tbody>
+         <tr>
+          <td>
+            <h2>Teacher Dashboard</h2>
+             <p>
+               You can manage your student enrollment here, as well as view each student's progress at the course, unit, and lesson level.
+               <br />Click here for <a target="_blank" href="https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY">instructions and documentation</a>.
+             </p>   
+          </td>
+          <td>
+           {% if teacher.is_admin %}
+             <form id='admin-button' action='{{ teacher.add_action }}' method='POST'>
+               <input type="hidden" name="xsrf_token" value="{{ teacher.add_xsrf_token }}">
+               <button class="gcb-button gcb-button-action gcb-button-author" type="submit">Admin: Add Teacher</button>
+             </form>
+             <div style='clear: both; padding-top: 2px;' />
+           {% endif %}
+          </td>
+         </tr>
+        </tbody>
+       </table>
+        <table id="buttons-table"> 
+         <tr>
+          <td>
+            <!-- RAM?? HACK the 'name' and 'value' from the hidden element are inserted as the action 
+                       when the button is clicked.  It probably should be like the commented-out lines. 
+                       We want the Url to be:  edit_sections?action=add_section                       -->
+            <form id='add-section-button' action='edit_sections?action=add_section'  method='GET'>
+             <input type="hidden" name="action" value="add_section">
+             <button class="gcb-button" type="submit">+ Create New Section</button>
+<!--             <form id='add-section-button' action='{{ teacher.add_section }}' method='GET'> -->
+<!--             <input type="hidden" name="xsrf_token" value="{{ teacher.newsection_xsrf_token }}"> -->
+           </form>
+           <div style='clear: both; padding-top: 2px;' />
+          </td>
+         </tr>
+         </table>
+        {% if teacher.sections %}
+        <div class="gcb-list gcb-list--autostripe xsrf-token-holder"
+             data-status-xsrf-token-announcement="{{ status_xsrf_token }}">
+         <table>
+          <thead>
+           <tr>
+            <th class="gcb-list__cell--icon"></th>
+            <th class="gcb-list__cell--icon"></th>
+            <th>Your Sections</th>
+            <th class="gcb-list__cell--icon"></th>
+           </tr>
+          </thead>
+          <tbody>
+          {% for item in teacher.sections %}
+            <tr>
+             <td>
+              <button class="gcb-button" type="submit">View Roster</button>
+             </td>
+             <td>
+              <div class="material-icons icon-draft-status gcb-list__icon gcb-list__iconrowhover
+                   {% if item.is_draft %}private{% else %}public{% endif %}"
+                   data-component-type="announcement" data-key="{{ item.key }}"
+              </div>
+             </td>
+             <td>
+               <a href="edit_sections?action=edit_section&key={{ item.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">open_in_editor</a>
+             </td>
+             <td>
+               <a href="{{item.edit_action}}">
+                  {{item.name}} &nbsp;&nbsp; {{item.acadyr}} &nbsp;&nbsp; {{item.description}} &nbsp;&nbsp; 
+               <script>
+                 (function() {
+                   function pad(num) {
+                     return (num < 10 ? '0' : '') + num;
+                   }
+                   var date = new Date({{ item.date }});
+                   var year = date.getFullYear();
+                   var month = pad(date.getMonth() + 1);
+                   var day = pad(date.getDate());
+                   var dateString = year + '-' + month + '-' + day;
+                   document.write(dateString);
+                 })();
+               </script>
+               </a>
+             </td>
+             <td>
+               {% if item.delete_action %}
+                <form id='gcb-delete-section-{{ loop.index0 }}' action='{{ item.delete_action }}' method='POST'>
+                  <input type="hidden" name="xsrf_token" value="{{ item.delete_xsrf_token }}">
+                   <button class="material-icons gcb-list__icon gcb-list__iconrowhover" type="submit" 
+                     onclick='return confirm("Delete this item?");'>delete</button> 
+                </form> 
+               {% endif %} 
+             </td> 
+            </tr>
+          {% endfor %}
+          </tbody>
+         </table>
+        {% else %}
+           {# I18N: Shown if the list of announcements is empty. #}
+           <p>{{ gettext('Currently, you do not have any sections.') }}</p>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

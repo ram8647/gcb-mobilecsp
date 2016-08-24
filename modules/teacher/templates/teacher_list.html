@@ -30,7 +30,7 @@
            </td> 
 
           <td>
-            <a href="teacher#{{ item.key }}" target="_blank" class="gcb-list__icon gcb-list__iconrowhover material-icons">open_in_new</a>
+            <a href="edit_teachers?action=edit_teacher&key={{ item.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">open_in_editor</a>
           </td>
 
           <td>
@@ -54,7 +54,7 @@
 
           <td>
             {% if item.delete_action %}
-            <form id='gcb-delete-announcement-{{ loop.index0 }}' action='{{ item.delete_action }}' method='POST'>
+            <form id='gcb-delete-teacher-{{ loop.index0 }}' action='{{ item.delete_action }}' method='POST'>
               <input type="hidden" name="xsrf_token" value="{{ item.delete_xsrf_token }}">
               <button class="material-icons gcb-list__icon gcb-list__icon--rowhover" type="submit"
                 onclick='return confirm("Delete this item?");'>delete</button>
