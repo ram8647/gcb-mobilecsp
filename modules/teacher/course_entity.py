@@ -90,7 +90,7 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
     @classmethod
     def SCHEMA(cls):
-        schema = schema_fields.FieldRegistry('CourseSection',
+        schema = schema_fields.FieldRegistry('Create a New Course Section',
             extra_schema_dict_values={
                 'className': 'inputEx-Group new-form-layout'})
         schema.add_property(schema_fields.SchemaField(

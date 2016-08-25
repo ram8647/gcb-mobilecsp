@@ -72,7 +72,7 @@
          </table>
         {% if teacher.sections %}
         <div class="gcb-list gcb-list--autostripe xsrf-token-holder"
-             data-status-xsrf-token-announcement="{{ status_xsrf_token }}">
+             data-status-xsrf-token-teacher-dashboard="{{ status_xsrf_token }}">
          <table>
           <thead>
            <tr>
@@ -91,7 +91,7 @@
              <td>
               <div class="material-icons icon-draft-status gcb-list__icon gcb-list__iconrowhover
                    {% if item.is_draft %}private{% else %}public{% endif %}"
-                   data-component-type="announcement" data-key="{{ item.key }}"
+                   data-component-type="teacher-dashboard" data-key="{{ item.key }}"
               </div>
              </td>
              <td>
@@ -129,7 +129,7 @@
           </tbody>
          </table>
         {% else %}
-           {# I18N: Shown if the list of announcements is empty. #}
+           {# I18N: Shown if the list of sections is empty. #}
            <p>{{ gettext('Currently, you do not have any sections.') }}</p>
         {% endif %}
       {% endif %}
@@ -137,6 +137,7 @@
   </div>
 </div>
 {% else %}
+{# I18N: Shown if the user is not a registered teacher. #}
 <p>Only registered teachers have access to the Teacher Dashboard.
 <br />Please contact an admin.
 </p>
