@@ -103,11 +103,11 @@ class TeacherHandlerMixin(object):
             # add 'edit' actions
             if TeacherRights.can_edit(self):
                 item['edit_action'] = self.get_admin_action_url(
-                     AdminDashboardHandler.EDIT_ACTION, key=item['key'])
+                     AdminDashboardHandler.ADMIN_EDIT_ACTION, key=item['key'])
                 item['delete_xsrf_token'] = self.create_xsrf_token(
-                    AdminDashboardHandler.DELETE_ACTION)
+                    AdminDashboardHandler.ADMIN_DELETE_ACTION)
                 item['delete_action'] = self.get_admin_action_url(
-                    AdminDashboardHandler.DELETE_ACTION,
+                    AdminDashboardHandler.ADMIN_DELETE_ACTION,
                     key=item['key'])
 
             template_items.append(item)
@@ -118,9 +118,9 @@ class TeacherHandlerMixin(object):
         # Add actions for the 'Add Teacher'
         if TeacherRights.can_edit(self):
             output['add_xsrf_token'] = self.create_xsrf_token(
-                AdminDashboardHandler.ADD_ACTION)
+                AdminDashboardHandler.ADMIN_ADD_ACTION)
             output['add_action'] = self.get_admin_action_url(
-                AdminDashboardHandler.ADD_ACTION)
+                AdminDashboardHandler.ADMIN_ADD_ACTION)
 
         return output
 
@@ -164,9 +164,9 @@ class TeacherHandlerMixin(object):
         if TeacherRights.can_edit(self):
             output['is_admin'] = True
             output['add_xsrf_token'] = self.create_xsrf_token(
-                AdminDashboardHandler.LIST_ACTION)
+                AdminDashboardHandler.ADMIN_LIST_ACTION)
             output['add_action'] = self.get_admin_action_url(
-                AdminDashboardHandler.LIST_ACTION)
+                AdminDashboardHandler.ADMIN_LIST_ACTION)
         return output
 
 class TeacherDashboardHandler(
@@ -189,7 +189,6 @@ class TeacherDashboardHandler(
     DISPLAY_ROSTER_ACTION = 'display_roster'
 
     # The links for Teacher functions
-#    DASHBOARD_LINK_URL = 'edit_sections'
     DASHBOARD_LINK_URL = 'teacher'
     DASHBOARD_URL = '/{}'.format(DASHBOARD_LINK_URL)
     DASHBOARD_LIST_URL = '{}?action={}'.format(DASHBOARD_LINK_URL, LIST_SECTION_ACTION)
@@ -431,18 +430,18 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
     """
 
     # The various Admin Actions
-    LIST_ACTION = 'edit_teachers'
-    EDIT_ACTION = 'edit_teacher'
-    DELETE_ACTION = 'delete_teacher'
-    ADD_ACTION = 'add_teacher'
+    ADMIN_LIST_ACTION = 'edit_teachers'
+    ADMIN_EDIT_ACTION = 'edit_teacher'
+    ADMIN_DELETE_ACTION = 'delete_teacher'
+    ADMIN_ADD_ACTION = 'add_teacher'
 
     # Not sure what these do?
-    get_actions = [EDIT_ACTION, LIST_ACTION]
-    post_actions = [ADD_ACTION, DELETE_ACTION]
+    get_actions = [ADMIN_EDIT_ACTION, ADMIN_LIST_ACTION]
+    post_actions = [ADMIN_ADD_ACTION, ADMIN_DELETE_ACTION]
 
-    LINK_URL = 'edit_teachers'
-    URL = '/{}'.format(LINK_URL)
-    LIST_URL = '{}?action={}'.format(LINK_URL, LIST_ACTION)
+    ADMIN_LINK_URL = 'mcsp_admin'
+    URL = '/{}'.format(ADMIN_LINK_URL)
+    ADMIN_LIST_URL = '{}?action={}'.format(ADMIN_LINK_URL, ADMIN_LIST_ACTION)
 
     @classmethod
     def get_child_routes(cls):
@@ -473,7 +472,7 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 
         logging.debug('***RAM**  Trace: get_edit_teachers')
         main_content = self.get_template(
-            'teacher_list.html', [TEMPLATES_DIR]).render({
+            'mcsp_admin_dashboard.html', [TEMPLATES_DIR]).render({
                 'teachers': self.format_admin_template(items),
             })
 
@@ -488,7 +487,7 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 
         schema = TeacherItemRESTHandler.SCHEMA()
 
-        exit_url = self.canonicalize_url('/{}'.format(self.LIST_URL))
+        exit_url = self.canonicalize_url('/{}'.format(self.ADMIN_LIST_URL))
         rest_url = self.canonicalize_url('/rest/teacher/item')
         form_html = oeditor.ObjectEditor.get_html_for(
             self,
@@ -505,7 +504,7 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
         self.render_page({
             'main_content': form_html,
             'page_title': 'Edit Teacher',
-        }, in_action=self.LIST_ACTION)
+        }, in_action=self.ADMIN_LIST_ACTION)
 
     def post_delete_teacher(self):
         """Deletes an teacher."""
@@ -518,7 +517,7 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
         entity = TeacherEntity.get(key)
         if entity:
             entity.delete()
-        self.redirect('/{}'.format(self.LIST_URL))
+        self.redirect('/{}'.format(self.ADMIN_LIST_URL))
 
     def post_add_teacher(self):
         """Adds a new teacher and redirects to an editor for it."""
@@ -531,7 +530,7 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
         entity.put()
 
         self.redirect(self.get_admin_action_url(
-            self.EDIT_ACTION, key=entity.key()))
+            self.ADMIN_EDIT_ACTION, key=entity.key()))
 
     def _get_delete_url(self, base_url, key, xsrf_token_name):
         return '%s?%s' % (
@@ -564,8 +563,8 @@ def register_module():
 
     dashboard.DashboardHandler.add_sub_nav_mapping(
         'analytics', MODULE_NAME, MODULE_TITLE,
-        action=AdminDashboardHandler.LIST_ACTION,
-        href=AdminDashboardHandler.LIST_URL,
+        action=AdminDashboardHandler.ADMIN_LIST_ACTION,
+        href=AdminDashboardHandler.ADMIN_LIST_URL,
         placement=1000, sub_group_name='pinned')
 
     global custom_module  # pylint: disable=global-statement
