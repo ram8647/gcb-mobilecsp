@@ -1,0 +1,110 @@
+{% extends 'base_course.html' %}
+
+{% if alerts %}
+  <script>
+    $(function() {
+      cbShowAlert("{{ alerts | js_string }}");
+    });
+  </script>
+{% endif %}
+
+{% block subtitle %}
+  {# I18N: Title of the webpage. #}
+  - {{ gettext('Student Roster') }}
+{% endblock subtitle %}
+
+{% block assets %}
+  {{ super() }}
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+{% endblock %}
+
+{% block top_content %}
+{% endblock %}
+
+{% block main_content %}
+{{ main_content }}
+{% if not disabled %}
+<div id="gcb-main">
+  <div class="gcb-article tab-content">
+    <div class="gcb-aside">
+      {% if section %}
+       <h2>Student Roster for Course {{ section.name }}</h2>
+       <h4>Teacher:  {{ teacher_email }}</h4>
+       <h4>Description: {{ section.description }}</h4>
+        <p>
+          You can manage student enrollment here, as well as view a summary of each student's progress at the course, unit, and lesson level.
+          <br />Click here for <a target="_blank" href="https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY">instructions and documentation</a>.
+        </p>   
+
+        {% if section.students %}
+        <div class="gcb-list gcb-list--autostripe xsrf-token-holder"
+             data-status-xsrf-token-teacher-dashboard="{{ status_xsrf_token }}">
+         <h3>Students</h3>
+         <table>
+          <thead>
+           <tr>
+            <th class="gcb-list__cell--icon"></th>
+            <th class="gcb-list__cell--icon">Name</th>
+            <th class="gcb-list__cell--icon">Email</th>
+            <th class="gcb-list__cell--icon">Course/Unit Progress</th>
+            <th class="gcb-list__cell--icon">Lesson Progress</th>
+            <th class="gcb-list__cell--icon">Quiz Scores</th>
+           </tr>
+          </thead>
+          <tbody>
+          {% for student in section.students %}
+            <tr>
+             <td>
+              <form id='view-dashboard-button' action='edit_sections?action=add_section'  method='GET'>
+                <input type="hidden" name="action" value="add_section">
+                <button class="gcb-button" type="submit">View Dashboard</button>
+              </form>
+              <div style='clear: both; padding-top: 2px;' />
+             </td>
+             <td>
+                {{ student.name }}
+             </td>
+             <td>
+                {{ student.email }}
+             </td>
+             <td>
+                {{ student.course_progress }}
+                <script>
+<!--                  (function() { -->
+<!--                    function pad(num) { -->
+<!--                      return (num < 10 ? '0' : '') + num; -->
+<!--                    } -->
+<!--                    var date = new Date({{ item.date }}); -->
+<!--                    var year = date.getFullYear(); -->
+<!--                    var month = pad(date.getMonth() + 1); -->
+<!--                    var day = pad(date.getDate()); -->
+<!--                    var dateString = year + '-' + month + '-' + day; -->
+<!--                    document.write(dateString); -->
+<!--                  })(); -->
+               </script>
+             </td>
+             <td>
+                {{ item.lesson_progress }}
+             </td> 
+             <td>
+                {{ item.quiz_scores }}
+             </td> 
+            </tr>
+          {% endfor %}
+          </tbody>
+         </table>
+        {% else %}
+           {# I18N: Shown if the list of students is empty. #}
+           <p>{{ gettext('Currently, you do not have any students in this section.') }}</p>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% else %}
+{# I18N: Shown if the user is not a registered teacher. #}
+<p>Only registered teachers have access to the Teacher Dashboard.
+<br />Please contact an admin.
+</p>
+{% endif %}
+{% endblock %}

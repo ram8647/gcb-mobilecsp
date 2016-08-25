@@ -86,7 +86,10 @@
           {% for item in teacher.sections %}
             <tr>
              <td>
-              <button class="gcb-button" type="submit">View Roster</button>
+              <form id='show-roster-button-{{ loop.index0 }}' action='edit_sections?action=display_roster'  method='GET'>
+                <input type="hidden" name="action" value="display_roster">
+                <button class="gcb-button" type="submit">View Roster</button>
+              </form>
              </td>
              <td>
               <div class="material-icons icon-draft-status gcb-list__icon gcb-list__iconrowhover

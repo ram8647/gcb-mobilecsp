@@ -63,8 +63,9 @@ RESOURCES_PATH = '/modules/teacher/resources'
 TEMPLATES_DIR = os.path.join(
     appengine_config.BUNDLE_ROOT, 'modules', MODULE_NAME, 'templates')
 
-# This is the template for the teachers' splash page.
+# These are the module's templates.  The first is the teacher's splash page.
 TEACHERS_TEMPLATE = os.path.join(TEMPLATES_DIR, 'teacher_dashboard.html')
+STUDENT_ROSTER_TEMPLATE = os.path.join(TEMPLATES_DIR, 'student_roster.html')
 
 class TeacherHandlerMixin(object):
     def get_admin_action_url(self, action, key=None):
@@ -185,6 +186,7 @@ class TeacherDashboardHandler(
     EDIT_SECTION_ACTION = 'edit_section'
     DELETE_SECTION_ACTION = 'delete_section'
     ADD_SECTION_ACTION = 'add_section'
+    DISPLAY_ROSTER_ACTION = 'display_roster'
 
     # The links for Teacher functions
     SECTION_LINK_URL = 'edit_sections'
@@ -193,7 +195,7 @@ class TeacherDashboardHandler(
 
     # Not sure what these do?  May be expendable?
     default_action = 'edit_sections'
-    get_actions = [default_action, LIST_SECTION_ACTION, EDIT_SECTION_ACTION, ADD_SECTION_ACTION]
+    get_actions = [default_action, LIST_SECTION_ACTION, EDIT_SECTION_ACTION, ADD_SECTION_ACTION, DISPLAY_ROSTER_ACTION]
     post_actions = [DELETE_SECTION_ACTION]
 
     def is_registered_teacher(self, user_email):
@@ -213,14 +215,27 @@ class TeacherDashboardHandler(
 
             This assumes that the template's values are in template_value.
         """
-
         self.template_value['navbar'] = {'teacher': True}
         self.render(TEACHERS_TEMPLATE)
-        
+
+    def _render_roster(self):
+        """ Renders the STUDENT_ROSTER_TEMPLATE by calling super.render(template)
+
+            This assumes that the template's values are in template_value.
+        """
+        self.template_value['navbar'] = {'teacher': True}
+        self.render(STUDENT_ROSTER_TEMPLATE)
+
+    def render_page(self, template):
+        """ Renders the template that's supplied as an argument."""
+
+        self.template_value['navbar'] = {'teacher': True}
+        self.render(template)
+
     def get_edit_sections(self):
         """ Displays a list of this teacher's sections, using the TEACHERS_TEMPLATE.
 
-            This method automatically handles 'edit_sections' actions and must be
+            This callback method automatically handles 'edit_sections' actions and must be
             named 'get_edit_sections'.
 
             This action displays the splash page for the Teacher Dashboard. It
@@ -230,9 +245,7 @@ class TeacherDashboardHandler(
             Its action is handled by AdminDashboardHandler.
 
             The template is injected with a list of this teacher's sections.
-
         """
-
         # Make sure the user is a registered teacher
         alerts = []
         disable = False
@@ -256,8 +269,8 @@ class TeacherDashboardHandler(
     def get_add_section(self):
         """ Shows an editor for a section entity.
 
-            This is triggered when the user clicks on the 'Create New Section'
-            button in the Teacher splach page.
+            This callback method is triggered when the user clicks on the 
+            'Create New Section' button in the Teacher splach page.
         """
         if not TeacherRights.can_add_section(self):
             self.error(401)
@@ -307,34 +320,6 @@ class TeacherDashboardHandler(
             entity.delete()
         self.redirect('/{}'.format(self.SECTION_LIST_URL))
 
-
-    def get_delete_section(self):
-        """Deletes a section."""
-        if not TeacherRights.can_delete_section(self):
-            self.error(401)
-            return
-
-        logging.debug('***RAM** get_delete_section')
-        key = self.request.get('key')
-        entity = CourseSectionEntity.get(key)
-        if entity:
-            entity.delete()
-        self.redirect('/{}'.format(self.SECTION_LIST_URL))
-
-
-    def post_add_section(self):
-        """Adds a new section and redirects to an editor for it."""
-        if not TeacherRights.can_add_section(self):
-            self.error(401)
-            return
-
-        logging.debug('***RAM** post_add_section')
-        entity = CourseSectionEntity.make('', '', '',True)
-        entity.put()
-
-        self.redirect(self.get_dashboard_action_url(
-            self.EDIT_SECTION_ACTION, key=entity.key()))
-
     def _get_delete_url(self, base_url, key, xsrf_token_name):
         return '%s?%s' % (
             self.canonicalize_url(base_url),
@@ -344,9 +329,94 @@ class TeacherDashboardHandler(
                     self.create_xsrf_token(xsrf_token_name)),
             }))
 
-    def render_page(self, template):
-        self.template_value['navbar'] = {'teacher': True}
-        self.render(template)
+    def get_display_roster(self):
+        """Callback method to display the Roster view. 
+
+           This is called when the user clicks on the 'View Roster' button  
+           from the main Teacher Dashboard page.  It displays all students 
+           in a single course section and their progress in the course.
+           Also allows the teacher to manage the section.
+        """
+        logging.debug('***RAM*** Trace: display_roster')
+
+        user_email = users.get_current_user().email()
+        # self._render will render the ROSTER template
+#        self.template_value['section'] = self.format_roster_template(sections, user_email)
+        self.template_value['section'] = { 'description' : "This is a test." }
+        self.template_value['teacher_email'] = user_email
+        self.template_value['section_name'] = 'Testing'
+#         self.template_value['alerts'] = alerts
+#         self.template_value['disabled'] = disable
+#         self.template_value['xsrf_token'] = self.create_xsrf_token(
+#             TeacherDashboardHandler.DISPLAY_ROSTER_ACTION)
+        self._render_roster()
+
+#        template_values = {}
+#         template_values['add_student_xsrf_token'] = crypto.XsrfTokenManager.create_xsrf_token(
+#             teacher_rest_handlers.CourseSectionRestHandler.XSRF_TOKEN)
+
+#         #need list of units and lessons for select elements that determine which progress value to display
+#         #need a list of units, need the titles, unit ids, types
+#         units = self.get_course().get_units()
+#         units_filtered = filter(lambda x: x.type == 'U', units) #filter out assessments
+#         template_values['units'] = units_filtered
+
+#         #need to get lessons, but only for units that aren't assessments
+#         lessons = {}
+#         for unit in units_filtered:
+#             unit_lessons = self.get_course().get_lessons(unit.unit_id)
+#             unit_lessons_filtered = []
+#             for lesson in unit_lessons:
+#                 unit_lessons_filtered.append({
+#                     'title': lesson.title,
+#                     'unit_id': lesson.unit_id,
+#                     'lesson_id': lesson.lesson_id
+#                 })
+#             lessons[unit.unit_id] = unit_lessons_filtered
+#         template_values['lessons'] = transforms.dumps(lessons, {}) #passing in JSON to template so it can be used
+#                                                                     # in JavaScript
+
+#         course_section_id = self.request.get('section')
+
+#         course_section = teacher_entity.CourseSectionEntity.get_course_for_user(course_section_id)
+#         students = {}
+
+#         #need to get progress values for ALL students since we show completion for every student
+#         if course_section.students and len(course_section.students) > 0:
+#             #course_section.students = sorted(course_section.students.values(), key=lambda k: (k['name']))
+#             for student in course_section.students.values():
+#                 this_student = Teacher.get_student_by_email(student['email'])
+#                 temp_student = {}
+
+#                 temp_student['unit_completion'] = teacher_parsers.StudentProgressTracker.get_unit_completion(
+#                     this_student, self.get_course())
+#                 temp_student['course_completion'] = teacher_parsers.StudentProgressTracker.get_overall_progress(
+#                     this_student, self.get_course())
+#                 temp_student['detailed_course_completion'] = teacher_parsers.StudentProgressTracker.get_detailed_progress(
+#                     this_student, self.get_course())
+#                 temp_student['email'] = student['email']
+#                 temp_student['name'] = student['name']
+
+#                 students[student['email']] = temp_student
+
+#         course_section.students = students
+
+#         #passing in students as JSON so JavaScript can handle updating completion values easier
+#         template_values['students_json'] = transforms.dumps(course_section.students, {})
+#         template_values['namespace'] = self.get_course()._namespace.replace('ns_', '')
+
+#         if course_section:
+#             template_values['section'] = course_section
+
+#         #render student_list.html for Roster view
+#         main_content = self.get_template(
+#             'student_list.html', [TEMPLATES_DIR]).render(template_values)
+
+#         #DashboardHandler renders the page -- that won't work 
+#         self.render_page({
+#             'page_title': self.format_title('Student List'),
+#             'main_content': jinja2.utils.Markup(main_content)})
+
 
 class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 
@@ -388,7 +458,6 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
             ]
 
     def get_edit_teachers(self):
-#    def post_edit_teachers(self):
 
         """ Displays a list of registered teachers.
 
