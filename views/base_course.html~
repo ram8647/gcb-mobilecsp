@@ -81,7 +81,7 @@
 
         <li {% if navbar.teacher %}class='active'{% endif %}>
           {# I18N: Navbar tab. #}
-          <a href="teacher">{{ gettext('(Teachers)') }}</a>
+          <a href="edit_sections">{{ gettext('(Teachers)') }}</a>
         </li>
 
 

@@ -79,10 +79,12 @@
           </li>
         {% endfor %}
 
-        <li {% if navbar.teacher %}class='active'{% endif %}>
-          {# I18N: Navbar tab. #}
-          <a href="edit_sections">{{ gettext('(Teachers)') }}</a>
-        </li>
+        {% if not transient_student %}
+          <li {% if navbar.teacher %}class='active'{% endif %}>
+             {# I18N: Navbar tab. #}
+             <a href="edit_sections">{{ gettext('(Teachers)') }}</a>
+          </li>
+        {% endif %}
 
 
         <!-- right-aligned links are in order -->

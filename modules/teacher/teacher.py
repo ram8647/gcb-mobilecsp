@@ -175,19 +175,41 @@ class TeacherStudentHandler(
     get_actions = [default_action, LIST_SECTION, EDIT_SECTION, ADD_SECTION]
     post_actions = [DELETE_SECTION]
 
+    def is_registered_teacher(self):
+        """Determines if current user is a registered teacher"""
+        items = TeacherEntity.get_teachers()
+        items = TeacherRights.apply_rights(self, items)
+        user = users.get_current_user()
+
+        for teacher in items:
+#            logging.debug('***RAM*** teacher = ' + str(teacher.email))
+#            logging.debug('***RAM*** user ' + str(users.User.email(user)))
+            if teacher.email == users.User.email(user):
+                return True
+        return False
+    
+
     def _render(self):
         self.template_value['navbar'] = {'teacher': True}
         self.render(SECTIONS_TEMPLATE)
-#        self.render('teacher_dashboard.html')
-
+        
     def get_edit_sections(self):
-        """Shows a list of teachers."""
+        """Shows a list of this teacher's sections."""
+
+        alerts = []
+        disable = False
+        if not self.is_registered_teacher():
+            alerts.append('Access denied. Please see a course admin.')
+            disable = True
+
         sections = CourseSectionEntity.get_sections()
         sections = TeacherRights.apply_rights(self, sections)
 
         logging.debug('***RAM** get_edit_sections')
 
         self.template_value['teacher'] = self.format_template(sections)
+        self.template_value['alerts'] = alerts
+        self.template_value['disabled'] = disable
         self._render()
 
     def get_add_section(self):

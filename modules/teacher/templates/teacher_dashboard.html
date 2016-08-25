@@ -1,5 +1,13 @@
 {% extends 'base_course.html' %}
 
+{% if alerts %}
+  <script>
+    $(function() {
+      cbShowAlert("{{ alerts | js_string }}");
+    });
+  </script>
+{% endif %}
+
 {% block subtitle %}
   {# I18N: Title of the webpage. #}
   - {{ gettext('Teacher Dashboard') }}
@@ -15,6 +23,7 @@
 
 {% block main_content %}
 {{ main_content }}
+{% if not disabled %}
 <div id="gcb-main">
   <div class="gcb-article tab-content">
     <div class="gcb-aside">
@@ -123,4 +132,9 @@
     </div>
   </div>
 </div>
+{% else %}
+<p>Only registered teachers have access to the Teacher Dashboard.
+<br />Please contact an admin.
+</p>
+{% endif %}
 {% endblock %}
