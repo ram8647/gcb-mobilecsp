@@ -29,14 +29,39 @@
     <div class="gcb-aside">
       {% if section %}
        <h2>Student Roster for Course {{ section.name }}</h2>
-       <h4>Teacher:  {{ teacher_email }}</h4>
-       <h4>Description: {{ section.description }}</h4>
+       <br /><b>Teacher:  {{ teacher_email }} </b>
+       <br /><b>Description: {{ section.description }}</b>
         <p>
           You can manage student enrollment here, as well as view a summary of each student's progress at the course, unit, and lesson level.
           <br />Click here for <a target="_blank" href="https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY">instructions and documentation</a>.
         </p>   
 
-        {% if section.students %}
+        <table id="buttons-table"> 
+         <tr>
+          <td>
+            <form id='add-students-button' action='teacher?action=add_students'  method='GET'>
+             <input type="hidden" name="action" value="add_students">
+             <button class="gcb-button" type="submit">+ Add Students</button>
+           </form>
+           <div style='clear: both; padding-top: 2px;' />
+          </td>
+          <td>
+            <form id='delete-students-button' action='teacher?action=remove_students'  method='GET'>
+             <input type="hidden" name="action" value="remove_students">
+             <button class="gcb-button" type="submit">- Remove Students</button>
+           </form>
+           <div style='clear: both; padding-top: 2px;' />
+          </td>
+          <td>
+           <b>Unit: </b> {% if units %} We have units {% endif %} 
+          </td>
+          <td>
+           <b>Lessons: </b> {% if lessons %} We have lessons {% endif %} 
+          </td>
+         </tr>
+        </table>
+
+        {% if students %}
         <div class="gcb-list gcb-list--autostripe xsrf-token-holder"
              data-status-xsrf-token-teacher-dashboard="{{ status_xsrf_token }}">
          <h3>Students</h3>
@@ -52,42 +77,28 @@
            </tr>
           </thead>
           <tbody>
-          {% for student in section.students %}
+          {% for student in students %}
             <tr>
              <td>
               <form id='view-dashboard-button' action='edit_sections?action=add_section'  method='GET'>
                 <input type="hidden" name="action" value="add_section">
                 <button class="gcb-button" type="submit">View Dashboard</button>
               </form>
-              <div style='clear: both; padding-top: 2px;' />
              </td>
              <td>
-                {{ student.name }}
+                {{ student['name'] }}
              </td>
              <td>
-                {{ student.email }}
+                {{ student['email'] }}
              </td>
              <td>
-                {{ student.course_progress }}
-                <script>
-<!--                  (function() { -->
-<!--                    function pad(num) { -->
-<!--                      return (num < 10 ? '0' : '') + num; -->
-<!--                    } -->
-<!--                    var date = new Date({{ item.date }}); -->
-<!--                    var year = date.getFullYear(); -->
-<!--                    var month = pad(date.getMonth() + 1); -->
-<!--                    var day = pad(date.getDate()); -->
-<!--                    var dateString = year + '-' + month + '-' + day; -->
-<!--                    document.write(dateString); -->
-<!--                  })(); -->
-               </script>
+                {{ student['course_progress'] }}
              </td>
              <td>
-                {{ item.lesson_progress }}
+                {{ student['course_progress'] }}
              </td> 
              <td>
-                {{ item.quiz_scores }}
+                Quiz: {{ student['quiz_score'] }}
              </td> 
             </tr>
           {% endfor %}

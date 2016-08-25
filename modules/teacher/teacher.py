@@ -337,50 +337,71 @@ class TeacherDashboardHandler(
            in a single course section and their progress in the course.
            Also allows the teacher to manage the section.
         """
-        logging.debug('***RAM*** Trace: display_roster')
+        key = self.request.get('key')
+        course_section = CourseSectionEntity.get(key)
+
+        # Get a progress tracker for the course
+        this_course = self.get_course()
+        tracker = this_course.get_progress_tracker()
+
+        # Get this course's units
+        units = this_course.get_units()
+        units_filtered = filter(lambda x: x.type == 'U', units) #filter out assessments
+
+        # And lessons
+        lessons = {}
+        for unit in units_filtered:
+            unit_lessons = this_course.get_lessons(unit.unit_id)
+            unit_lessons_filtered = []
+            for lesson in unit_lessons:
+                unit_lessons_filtered.append({
+                    'title': lesson.title,
+                    'unit_id': lesson.unit_id,
+                    'lesson_id': lesson.lesson_id
+                })
+            lessons[unit.unit_id] = unit_lessons_filtered
+        
+        # Convert to JSON
+        lessons = transforms.dumps(lessons, {}) 
+
+        # Get all students in this section 
+        s = ['ram8647@gmail.com', 'jrosato@css.edu']   # Faking it
+        students = []
+        if s and len(s) > 0:
+#            for student in course_section.students.values():
+            for student in s:
+                this_student = Student.get_first_by_email(student)[0]
+                logging.debug('***RAM*** student = ' + str(this_student))
+                temp_student = {}
+                units_completed = tracker.get_unit_percent_complete(this_student)
+                progress = 0
+                for value in units_completed.values():
+                    progress += value
+                
+                temp_student['unit_completion'] = units_completed
+                temp_student['course_progress'] = str(round(progress / len(units_completed) * 100,2))
+                temp_student['email'] = student
+                temp_student['name'] = this_student.name
+                students.append(temp_student)
+
+        logging.debug('***RAM*** Students : ' + str(students))
+
 
         user_email = users.get_current_user().email()
-        # self._render will render the ROSTER template
-#        self.template_value['section'] = self.format_roster_template(sections, user_email)
-        self.template_value['section'] = { 'description' : "This is a test." }
+        self.template_value['section'] = { 'name' : course_section.name, 'description' : course_section.description }
         self.template_value['teacher_email'] = user_email
-        self.template_value['section_name'] = 'Testing'
+        self.template_value['section_name'] = course_section.name
+        self.template_value['units'] = units_filtered
+        self.template_value['lessons'] = lessons
+        self.template_value['students'] = students
+
+        self._render_roster()
+
+
 #         self.template_value['alerts'] = alerts
 #         self.template_value['disabled'] = disable
 #         self.template_value['xsrf_token'] = self.create_xsrf_token(
 #             TeacherDashboardHandler.DISPLAY_ROSTER_ACTION)
-        self._render_roster()
-
-#        template_values = {}
-#         template_values['add_student_xsrf_token'] = crypto.XsrfTokenManager.create_xsrf_token(
-#             teacher_rest_handlers.CourseSectionRestHandler.XSRF_TOKEN)
-
-#         #need list of units and lessons for select elements that determine which progress value to display
-#         #need a list of units, need the titles, unit ids, types
-#         units = self.get_course().get_units()
-#         units_filtered = filter(lambda x: x.type == 'U', units) #filter out assessments
-#         template_values['units'] = units_filtered
-
-#         #need to get lessons, but only for units that aren't assessments
-#         lessons = {}
-#         for unit in units_filtered:
-#             unit_lessons = self.get_course().get_lessons(unit.unit_id)
-#             unit_lessons_filtered = []
-#             for lesson in unit_lessons:
-#                 unit_lessons_filtered.append({
-#                     'title': lesson.title,
-#                     'unit_id': lesson.unit_id,
-#                     'lesson_id': lesson.lesson_id
-#                 })
-#             lessons[unit.unit_id] = unit_lessons_filtered
-#         template_values['lessons'] = transforms.dumps(lessons, {}) #passing in JSON to template so it can be used
-#                                                                     # in JavaScript
-
-#         course_section_id = self.request.get('section')
-
-#         course_section = teacher_entity.CourseSectionEntity.get_course_for_user(course_section_id)
-#         students = {}
-
 #         #need to get progress values for ALL students since we show completion for every student
 #         if course_section.students and len(course_section.students) > 0:
 #             #course_section.students = sorted(course_section.students.values(), key=lambda k: (k['name']))
