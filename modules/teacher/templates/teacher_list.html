@@ -1,6 +1,6 @@
 {% if teachers.add_action %}
   <div class="gcb-button-toolbar">
-    <form id='gcb-add-announcement' action='{{ teachers.add_action }}' method='POST'>
+     <form id='gcb-add-teacher' action='{{ teachers.add_action }}' method='POST'>
       <input type="hidden" name="xsrf_token" value="{{ teachers.add_xsrf_token }}">
       <button class="gcb-button" type="submit">Add Teacher</button>
     </form>
