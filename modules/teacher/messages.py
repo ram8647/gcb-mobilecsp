@@ -26,6 +26,10 @@ SECTION_BLURB_DESCRIPTION = """
 Brief description of the section.
 """
 
+SECTION_DATE_DESCRIPTION = """
+Date the section was created.
+"""
+
 ACADEMIC_YEAR_DESCRIPTION = """
 Academic year the course is offered.
 """

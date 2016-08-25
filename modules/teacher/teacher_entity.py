@@ -90,16 +90,6 @@ class TeacherEntity(entities.BaseEntity):
         super(TeacherEntity, self).delete()
         MemcacheManager.delete(self.memcache_key)
 
-#     def get_sections(self):
-#         return sections
-
-#     def get_key(self, transform_fn=None):
-#         """Gets a version of the key that uses user_id for the key name."""
-#         if not self.user_id:
-#             raise Exception('Teacher instance has no user_id set.')
-#         user_id = transform_fn(self.user_id) if transform_fn else self.user_id
-#         return db.Key.from_path(Teacher.kind(), user_id)
-
 class TeacherRights(object):
     """Manages view/edit rights for teachers."""
 

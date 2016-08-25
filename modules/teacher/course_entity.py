@@ -19,6 +19,7 @@ import datetime
 import logging
 
 from google.appengine.ext import db
+from google.appengine.api import users
 
 from common import schema_fields
 from common import utils as common_utils
@@ -45,6 +46,7 @@ class CourseSectionEntity(entities.BaseEntity):
     is_active = db.BooleanProperty(indexed=False)
     date = db.DateProperty()
     students = db.TextProperty(indexed=False)
+    teacher_email = db.TextProperty(indexed=False)
     section_id = db.StringProperty(indexed=True)    
     labels = db.StringProperty(indexed=False)
 
@@ -66,6 +68,7 @@ class CourseSectionEntity(entities.BaseEntity):
         entity.description = description
         entity.is_active = is_active
         entity.date = datetime.datetime.now().date()
+        entity.teacher_email = users.get_current_user().email()
         entity.students = ""
         return entity
 
@@ -101,6 +104,9 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         schema.add_property(schema_fields.SchemaField(
             'acadyr', 'Academic Year', 'string',
             description=messages.ACADEMIC_YEAR_DESCRIPTION))
+#         schema.add_property(schema_fields.SchemaField(
+#             'date', 'Date', 'datetime',
+#             description=messages.SECTION_DATE_DESCRIPTION))
         resources_display.LabelGroupsHelper.add_labels_schema_fields(
             schema, 'section')
         return schema

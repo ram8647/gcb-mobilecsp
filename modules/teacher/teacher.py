@@ -116,7 +116,7 @@ class TeacherHandlerMixin(object):
 
         return output
 
-    def format_template(self, sections):
+    def format_template(self, sections, user_email):
         """Formats the template for the main page."""
         template_sections = []
         if sections:
@@ -126,7 +126,7 @@ class TeacherHandlerMixin(object):
                 logging.debug('***RAM*** format template section = ' + str(section))
 
                 # add 'edit' actions to each section
-                if TeacherRights.can_edit(self):
+                if section['teacher_email'] == user_email and TeacherRights.can_edit(self):
                     section['edit_action'] = self.get_section_action_url(
                         TeacherStudentHandler.EDIT_SECTION, key=section['key'])
 
@@ -135,7 +135,7 @@ class TeacherHandlerMixin(object):
                     section['delete_action'] = self.get_section_action_url(
                         TeacherStudentHandler.DELETE_SECTION,
                         key=section['key'])
-                template_sections.append(section) 
+                    template_sections.append(section) 
 
         output = {}
         output['sections'] = template_sections
@@ -175,16 +175,14 @@ class TeacherStudentHandler(
     get_actions = [default_action, LIST_SECTION, EDIT_SECTION, ADD_SECTION]
     post_actions = [DELETE_SECTION]
 
-    def is_registered_teacher(self):
+    def is_registered_teacher(self, user_email):
         """Determines if current user is a registered teacher"""
         items = TeacherEntity.get_teachers()
         items = TeacherRights.apply_rights(self, items)
-        user = users.get_current_user()
-
         for teacher in items:
 #            logging.debug('***RAM*** teacher = ' + str(teacher.email))
 #            logging.debug('***RAM*** user ' + str(users.User.email(user)))
-            if teacher.email == users.User.email(user):
+            if teacher.email == user_email:
                 return True
         return False
     
@@ -198,16 +196,20 @@ class TeacherStudentHandler(
 
         alerts = []
         disable = False
-        if not self.is_registered_teacher():
+        user_email = users.get_current_user().email()
+        if not self.is_registered_teacher(user_email):
             alerts.append('Access denied. Please see a course admin.')
             disable = True
 
         sections = CourseSectionEntity.get_sections()
+
+
         sections = TeacherRights.apply_rights(self, sections)
 
         logging.debug('***RAM** get_edit_sections')
 
-        self.template_value['teacher'] = self.format_template(sections)
+        self.template_value['teacher'] = self.format_template(sections, user_email)
+        self.template_value['teacher_email'] = user_email
         self.template_value['alerts'] = alerts
         self.template_value['disabled'] = disable
         self._render()
