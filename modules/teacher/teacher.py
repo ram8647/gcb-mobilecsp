@@ -82,7 +82,7 @@ class TeacherHandlerMixin(object):
             args['key'] = key
         return self.canonicalize_url(
             '{}?{}'.format(
-                TeacherDashboardHandler.SECTION_URL, urllib.urlencode(args)))
+                TeacherDashboardHandler.DASHBOARD_URL, urllib.urlencode(args)))
 
     def format_admin_template(self, items):
         """ Formats the template for the Admin 'Add Teacher' page.
@@ -189,9 +189,10 @@ class TeacherDashboardHandler(
     DISPLAY_ROSTER_ACTION = 'display_roster'
 
     # The links for Teacher functions
-    SECTION_LINK_URL = 'edit_sections'
-    SECTION_URL = '/{}'.format(SECTION_LINK_URL)
-    SECTION_LIST_URL = '{}?action={}'.format(SECTION_LINK_URL, LIST_SECTION_ACTION)
+#    DASHBOARD_LINK_URL = 'edit_sections'
+    DASHBOARD_LINK_URL = 'teacher'
+    DASHBOARD_URL = '/{}'.format(DASHBOARD_LINK_URL)
+    DASHBOARD_LIST_URL = '{}?action={}'.format(DASHBOARD_LINK_URL, LIST_SECTION_ACTION)
 
     # Not sure what these do?  May be expendable?
     default_action = 'edit_sections'
@@ -290,7 +291,7 @@ class TeacherDashboardHandler(
 
         schema = SectionItemRESTHandler.SCHEMA()
 
-        exit_url = self.canonicalize_url('/{}'.format(self.SECTION_LIST_URL))
+        exit_url = self.canonicalize_url('/{}'.format(self.DASHBOARD_LIST_URL))
         rest_url = self.canonicalize_url('/rest/section/item')
         form_html = oeditor.ObjectEditor.get_html_for(
             self,
@@ -318,7 +319,7 @@ class TeacherDashboardHandler(
         entity = CourseSectionEntity.get(key)
         if entity:
             entity.delete()
-        self.redirect('/{}'.format(self.SECTION_LIST_URL))
+        self.redirect('/{}'.format(self.DASHBOARD_LIST_URL))
 
     def _get_delete_url(self, base_url, key, xsrf_token_name):
         return '%s?%s' % (
@@ -555,7 +556,7 @@ def register_module():
 
     handlers = [
         (AdminDashboardHandler.URL, AdminDashboardHandler),
-        (TeacherDashboardHandler.SECTION_URL, TeacherDashboardHandler)
+        (TeacherDashboardHandler.DASHBOARD_URL, TeacherDashboardHandler)
     ]
 
     global_routes = [

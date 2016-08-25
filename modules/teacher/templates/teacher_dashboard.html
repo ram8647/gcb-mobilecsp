@@ -58,8 +58,8 @@
           <td>
             <!-- RAM?? HACK the 'name' and 'value' from the hidden element are inserted as the action 
                        when the button is clicked.  It probably should be like the commented-out lines. 
-                       We want the Url to be:  edit_sections?action=add_section                       -->
-            <form id='add-section-button' action='edit_sections?action=add_section'  method='GET'>
+                       We want the Url to be:  teacher?action=add_section                       -->
+            <form id='add-section-button' action='teacher?action=add_section'  method='GET'>
              <input type="hidden" name="action" value="add_section">
              <button class="gcb-button" type="submit">+ Create New Section</button>
 <!--              NOTE: For GET, GCB constructs an action URL that doesn't work.     -->
@@ -86,7 +86,7 @@
           {% for item in teacher.sections %}
             <tr>
              <td>
-              <form id='show-roster-button-{{ loop.index0 }}' action='edit_sections?action=display_roster'  method='GET'>
+              <form id='show-roster-button-{{ loop.index0 }}' action='teacher?action=display_roster'  method='GET'>
                 <input type="hidden" name="action" value="display_roster">
                 <button class="gcb-button" type="submit">View Roster</button>
               </form>
@@ -98,7 +98,7 @@
               </div>
              </td>
              <td>
-               <a href="edit_sections?action=edit_section&key={{ item.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">open_in_editor</a>
+               <a href="teacher?action=edit_section&key={{ item.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">open_in_editor</a>
              </td>
              <td>
                <a href="{{item.edit_action}}">
