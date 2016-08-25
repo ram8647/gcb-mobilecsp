@@ -40,8 +40,11 @@
           </td>
           <td>
            {% if teacher.is_admin %}
-             <form id='admin-button' action='{{ teacher.add_action }}' method='POST'>
-               <input type="hidden" name="xsrf_token" value="{{ teacher.add_xsrf_token }}">
+<!--              NOTE: For GET, GCB constructs an action URL that doesn't work.     -->
+<!--              <form id='admin-button' action='{{ teacher.add_action }}' method='GET'> -->
+<!--                <input type="hidden" name="xsrf_token" value="{{ teacher.add_xsrf_token }}"> -->
+             <form id='admin-button' action='edit_teachers?action=edit_teachers' method='GET'>
+               <input type="hidden" name="action" value="edit_teachers">
                <button class="gcb-button gcb-button-action gcb-button-author" type="submit">Admin: Add Teacher</button>
              </form>
              <div style='clear: both; padding-top: 2px;' />
@@ -59,6 +62,7 @@
             <form id='add-section-button' action='edit_sections?action=add_section'  method='GET'>
              <input type="hidden" name="action" value="add_section">
              <button class="gcb-button" type="submit">+ Create New Section</button>
+<!--              NOTE: For GET, GCB constructs an action URL that doesn't work.     -->
 <!--             <form id='add-section-button' action='{{ teacher.add_section }}' method='GET'> -->
 <!--             <input type="hidden" name="xsrf_token" value="{{ teacher.newsection_xsrf_token }}"> -->
            </form>

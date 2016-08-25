@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Classes and methods to create and manage Teachers. 
-   Revised from the announcements module.   """
+""" Classes and methods to create and manage the Teacher Dashboard.
+    Based off of the announcements module, which was created by 
+    saifu@google.com.   
+"""
 
 __author__ = 'Saifu Angto (saifu@google.com)'
 __author__ = 'Ralph Morelli (ram8647@gmail.com)'
@@ -54,34 +56,39 @@ from teacher_entity import TeacherItemRESTHandler
 from teacher_entity import TeacherRights
 
 MODULE_NAME = 'teacher'
-MODULE_TITLE = 'Teacher'
+MODULE_TITLE = 'Teacher Dashboard'
 
 #Setup paths and directories for templates and resources
 RESOURCES_PATH = '/modules/teacher/resources'
 TEMPLATES_DIR = os.path.join(
     appengine_config.BUNDLE_ROOT, 'modules', MODULE_NAME, 'templates')
 
-SECTIONS_TEMPLATE = os.path.join(TEMPLATES_DIR, 'teacher_dashboard.html')
+# This is the template for the teachers' splash page.
+TEACHERS_TEMPLATE = os.path.join(TEMPLATES_DIR, 'teacher_dashboard.html')
 
 class TeacherHandlerMixin(object):
-    def get_teacher_action_url(self, action, key=None):
+    def get_admin_action_url(self, action, key=None):
         args = {'action': action}
         if key:
             args['key'] = key
         return self.canonicalize_url(
             '{}?{}'.format(
-                MyTeacherDashboardHandler.URL, urllib.urlencode(args)))
+                AdminDashboardHandler.URL, urllib.urlencode(args)))
 
-    def get_section_action_url(self, action, key=None):
+    def get_dashboard_action_url(self, action, key=None):
         args = {'action': action}
         if key:
             args['key'] = key
         return self.canonicalize_url(
             '{}?{}'.format(
-                TeacherStudentHandler.SECTION_URL, urllib.urlencode(args)))
+                TeacherDashboardHandler.SECTION_URL, urllib.urlencode(args)))
 
-    def format_items_for_template(self, items):
-        """Formats a list of entities into template values."""
+    def format_admin_template(self, items):
+        """ Formats the template for the Admin 'Add Teacher' page.
+
+            When clicked the 'Admin: Add Teacher button opens up 
+            a list of teachers plus and 'Add Teacher' button.
+        """
         template_items = []
         for item in items:
             item = transforms.entity_to_dict(item)
@@ -94,12 +101,12 @@ class TeacherHandlerMixin(object):
 
             # add 'edit' actions
             if TeacherRights.can_edit(self):
-                item['edit_action'] = self.get_teacher_action_url(
-                     MyTeacherDashboardHandler.EDIT_ACTION, key=item['key'])
+                item['edit_action'] = self.get_admin_action_url(
+                     AdminDashboardHandler.EDIT_ACTION, key=item['key'])
                 item['delete_xsrf_token'] = self.create_xsrf_token(
-                    MyTeacherDashboardHandler.DELETE_ACTION)
-                item['delete_action'] = self.get_teacher_action_url(
-                    MyTeacherDashboardHandler.DELETE_ACTION,
+                    AdminDashboardHandler.DELETE_ACTION)
+                item['delete_action'] = self.get_admin_action_url(
+                    AdminDashboardHandler.DELETE_ACTION,
                     key=item['key'])
 
             template_items.append(item)
@@ -107,17 +114,22 @@ class TeacherHandlerMixin(object):
         output = {}
         output['children'] = template_items
 
-        # add 'add' action
+        # Add actions for the 'Add Teacher'
         if TeacherRights.can_edit(self):
             output['add_xsrf_token'] = self.create_xsrf_token(
-                MyTeacherDashboardHandler.ADD_ACTION)
-            output['add_action'] = self.get_teacher_action_url(
-                MyTeacherDashboardHandler.ADD_ACTION)
+                AdminDashboardHandler.ADD_ACTION)
+            output['add_action'] = self.get_admin_action_url(
+                AdminDashboardHandler.ADD_ACTION)
 
         return output
 
-    def format_template(self, sections, user_email):
-        """Formats the template for the main page."""
+    def format_dashboard_template(self, sections, user_email):
+        """ Formats the template for the main Teacher Dashboard page.
+
+            This is the page that registered teachers will see.  It consists of
+            list of the teacher's course sections and buttons to manage the
+            sections. 
+        """
         template_sections = []
         if sections:
             for section in sections:
@@ -125,58 +137,68 @@ class TeacherHandlerMixin(object):
 
                 logging.debug('***RAM*** format template section = ' + str(section))
 
-                # add 'edit' actions to each section
+                # Add 'edit' and 'delete' actions to each section that will be displayed
+
                 if section['teacher_email'] == user_email and TeacherRights.can_edit(self):
-                    section['edit_action'] = self.get_section_action_url(
-                        TeacherStudentHandler.EDIT_SECTION, key=section['key'])
+                    section['edit_action'] = self.get_dashboard_action_url(
+                        TeacherDashboardHandler.EDIT_SECTION_ACTION, key=section['key'])
 
                     section['delete_xsrf_token'] = self.create_xsrf_token(
-                        TeacherStudentHandler.DELETE_SECTION)
-                    section['delete_action'] = self.get_section_action_url(
-                        TeacherStudentHandler.DELETE_SECTION,
+                        TeacherDashboardHandler.DELETE_SECTION_ACTION)
+                    section['delete_action'] = self.get_dashboard_action_url(
+                        TeacherDashboardHandler.DELETE_SECTION_ACTION,
                         key=section['key'])
                     template_sections.append(section) 
 
         output = {}
         output['sections'] = template_sections
+
+        # Add actions for the 'New Section' button
         output['newsection_xsrf_token'] = self.create_xsrf_token(
-            TeacherStudentHandler.ADD_SECTION)
-        output['add_section'] = self.get_section_action_url(
-            TeacherStudentHandler.ADD_SECTION)
+            TeacherDashboardHandler.ADD_SECTION_ACTION)
+        output['add_section'] = self.get_dashboard_action_url(
+            TeacherDashboardHandler.ADD_SECTION_ACTION)
 
-
-        # add 'admin' action -- to add new teachers
+        # Add actions of the 'Admin' button -- to add new teachers
         if TeacherRights.can_edit(self):
             output['is_admin'] = True
-            output['xsrf_token'] = self.create_xsrf_token(
-                MyTeacherDashboardHandler.ADD_ACTION)
-#             output['add_xsrf_token'] = self.create_xsrf_token(
-#                 MyTeacherDashboardHandler.ADD_ACTION)
-            output['add_action'] = self.get_teacher_action_url(
-                MyTeacherDashboardHandler.ADD_ACTION)
-
+            output['add_xsrf_token'] = self.create_xsrf_token(
+                AdminDashboardHandler.LIST_ACTION)
+            output['add_action'] = self.get_admin_action_url(
+                AdminDashboardHandler.LIST_ACTION)
         return output
 
-class TeacherStudentHandler(
+class TeacherDashboardHandler(
         TeacherHandlerMixin, utils.BaseHandler,
         utils.ReflectiveRequestHandler):
 
-    LIST_SECTION = 'edit_sections'
-    EDIT_SECTION = 'edit_section'
-    DELETE_SECTION = 'delete_section'
-    ADD_SECTION = 'add_section'
+    """  Handle all Teacher (non-Admin) functions for the Teacher Dashboard.
 
+         The Teacher functions include creating and deleting course sections,
+         adding and removing students from sections, and monitoring student
+         performance. The Admin functions consist solely of registering teachers
+         and are handled by AdminDashboardHandler.
+    """
+
+    # Actions for the various Section functions
+    LIST_SECTION_ACTION = 'edit_sections'
+    EDIT_SECTION_ACTION = 'edit_section'
+    DELETE_SECTION_ACTION = 'delete_section'
+    ADD_SECTION_ACTION = 'add_section'
+
+    # The links for Teacher functions
     SECTION_LINK_URL = 'edit_sections'
     SECTION_URL = '/{}'.format(SECTION_LINK_URL)
-    SECTION_LIST_URL = '{}?action={}'.format(SECTION_LINK_URL, LIST_SECTION)
+    SECTION_LIST_URL = '{}?action={}'.format(SECTION_LINK_URL, LIST_SECTION_ACTION)
 
+    # Not sure what these do?  May be expendable?
     default_action = 'edit_sections'
-
-    get_actions = [default_action, LIST_SECTION, EDIT_SECTION, ADD_SECTION]
-    post_actions = [DELETE_SECTION]
+    get_actions = [default_action, LIST_SECTION_ACTION, EDIT_SECTION_ACTION, ADD_SECTION_ACTION]
+    post_actions = [DELETE_SECTION_ACTION]
 
     def is_registered_teacher(self, user_email):
-        """Determines if current user is a registered teacher"""
+        """Determines if current user is a registered teacher."""
+
         items = TeacherEntity.get_teachers()
         items = TeacherRights.apply_rights(self, items)
         for teacher in items:
@@ -186,14 +208,32 @@ class TeacherStudentHandler(
                 return True
         return False
     
-
     def _render(self):
+        """ Renders the TEACHERS_TEMPLATE by calling super.render(template)
+
+            This assumes that the template's values are in template_value.
+        """
+
         self.template_value['navbar'] = {'teacher': True}
-        self.render(SECTIONS_TEMPLATE)
+        self.render(TEACHERS_TEMPLATE)
         
     def get_edit_sections(self):
-        """Shows a list of this teacher's sections."""
+        """ Displays a list of this teacher's sections, using the TEACHERS_TEMPLATE.
 
+            This method automatically handles 'edit_sections' actions and must be
+            named 'get_edit_sections'.
+
+            This action displays the splash page for the Teacher Dashboard. It
+            displays when the user clicks on the navbar 'Teachers' tab. From there
+            the Teacher can manage all their sections.   It also contains an
+            'Admin: Add Teacher' button, which is visible only to admin users.
+            Its action is handled by AdminDashboardHandler.
+
+            The template is injected with a list of this teacher's sections.
+
+        """
+
+        # Make sure the user is a registered teacher
         alerts = []
         disable = False
         user_email = users.get_current_user().email()
@@ -202,20 +242,23 @@ class TeacherStudentHandler(
             disable = True
 
         sections = CourseSectionEntity.get_sections()
-
-
         sections = TeacherRights.apply_rights(self, sections)
 
-        logging.debug('***RAM** get_edit_sections')
+        logging.debug('***RAM*** Trace: get_edit_sections')
 
-        self.template_value['teacher'] = self.format_template(sections, user_email)
+        # self._render will render the SECTIONS template
+        self.template_value['teacher'] = self.format_dashboard_template(sections, user_email)
         self.template_value['teacher_email'] = user_email
         self.template_value['alerts'] = alerts
         self.template_value['disabled'] = disable
         self._render()
 
     def get_add_section(self):
-        """Shows an editor for a section."""
+        """ Shows an editor for a section entity.
+
+            This is triggered when the user clicks on the 'Create New Section'
+            button in the Teacher splach page.
+        """
         if not TeacherRights.can_add_section(self):
             self.error(401)
             return
@@ -224,8 +267,8 @@ class TeacherStudentHandler(
         entity = CourseSectionEntity.make('', '', '', True)
         entity.put()
 
-        self.redirect(self.get_section_action_url(
-            self.EDIT_SECTION, key=entity.key()))
+        self.redirect(self.get_dashboard_action_url(
+            self.EDIT_SECTION_ACTION, key=entity.key()))
 
     def get_edit_section(self):
         """Shows an editor for a section."""
@@ -289,8 +332,8 @@ class TeacherStudentHandler(
         entity = CourseSectionEntity.make('', '', '',True)
         entity.put()
 
-        self.redirect(self.get_section_action_url(
-            self.EDIT_SECTION, key=entity.key()))
+        self.redirect(self.get_dashboard_action_url(
+            self.EDIT_SECTION_ACTION, key=entity.key()))
 
     def _get_delete_url(self, base_url, key, xsrf_token_name):
         return '%s?%s' % (
@@ -305,16 +348,25 @@ class TeacherStudentHandler(
         self.template_value['navbar'] = {'teacher': True}
         self.render(template)
 
-class MyTeacherDashboardHandler(
-        TeacherHandlerMixin, dashboard.DashboardHandler):
-    """Handler for teachers."""
+class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 
+    """ Handler for all Admin functions, which basically consists of giving teachers
+        access to the Teacher Dashboard.
+
+        This is a subclass of DashboardHandler, so it comes with functionality that
+        is available to other Handlers, mainly in how pages are rendered.
+        DashboardHandler has a render_page method that is not available in other
+        handlers.
+    """
+
+    # The various Admin Actions
     LIST_ACTION = 'edit_teachers'
     EDIT_ACTION = 'edit_teacher'
     DELETE_ACTION = 'delete_teacher'
     ADD_ACTION = 'add_teacher'
 
-    get_actions = [LIST_ACTION, EDIT_ACTION]
+    # Not sure what these do?
+    get_actions = [EDIT_ACTION, LIST_ACTION]
     post_actions = [ADD_ACTION, DELETE_ACTION]
 
     LINK_URL = 'edit_teachers'
@@ -323,7 +375,12 @@ class MyTeacherDashboardHandler(
 
     @classmethod
     def get_child_routes(cls):
-        """Add child handlers for REST."""
+
+        """ Add child handlers for REST. The REST handlers perform
+            retrieve and store teachers, sections, and other data
+            used by the Teacher Dashboard.
+        """
+
         logging.debug('***RAM** get_child_routes')
         return [
             (TeacherItemRESTHandler.URL, TeacherItemRESTHandler),
@@ -331,14 +388,23 @@ class MyTeacherDashboardHandler(
             ]
 
     def get_edit_teachers(self):
-        """Shows a list of teachers."""
+#    def post_edit_teachers(self):
+
+        """ Displays a list of registered teachers.
+
+            This is the splash page for Admin users of Teacher Dashboard.
+            It is reached by clicking the 'Admin: Add Teacher' button in
+            the Teacher Dashboard splash page.  From this page Admins can
+            perform all tasks associated with registering teachers.
+        """
+
         items = TeacherEntity.get_teachers()
         items = TeacherRights.apply_rights(self, items)
 
-        logging.debug('***RAM** get_edit_teachers')
+        logging.debug('***RAM**  Trace: get_edit_teachers')
         main_content = self.get_template(
             'teacher_list.html', [TEMPLATES_DIR]).render({
-                'teachers': self.format_items_for_template(items),
+                'teachers': self.format_admin_template(items),
             })
 
         self.render_page({
@@ -394,7 +460,7 @@ class MyTeacherDashboardHandler(
         entity = TeacherEntity.make('', '', '')
         entity.put()
 
-        self.redirect(self.get_teacher_action_url(
+        self.redirect(self.get_admin_action_url(
             self.EDIT_ACTION, key=entity.key()))
 
     def _get_delete_url(self, base_url, key, xsrf_token_name):
@@ -419,8 +485,8 @@ def register_module():
     """Registers this module in the registry."""
 
     handlers = [
-        (MyTeacherDashboardHandler.URL, MyTeacherDashboardHandler),
-        (TeacherStudentHandler.SECTION_URL, TeacherStudentHandler)
+        (AdminDashboardHandler.URL, AdminDashboardHandler),
+        (TeacherDashboardHandler.SECTION_URL, TeacherDashboardHandler)
     ]
 
     global_routes = [
@@ -428,8 +494,8 @@ def register_module():
 
     dashboard.DashboardHandler.add_sub_nav_mapping(
         'analytics', MODULE_NAME, MODULE_TITLE,
-        action=MyTeacherDashboardHandler.LIST_ACTION,
-        href=MyTeacherDashboardHandler.LIST_URL,
+        action=AdminDashboardHandler.LIST_ACTION,
+        href=AdminDashboardHandler.LIST_URL,
         placement=1000, sub_group_name='pinned')
 
     global custom_module  # pylint: disable=global-statement
