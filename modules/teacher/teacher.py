@@ -18,6 +18,7 @@
 """
 
 __author__ = 'Saifu Angto (saifu@google.com)'
+__author__ = 'ehiller@css.edu'
 __author__ = 'Ralph Morelli (ram8647@gmail.com)'
 
 import cgi
@@ -365,43 +366,39 @@ class TeacherDashboardHandler(
         lessons = transforms.dumps(lessons, {}) 
 
         # Get all students in this section 
-        s = ['ram8647@gmail.com', 'jrosato@css.edu']   # Faking it
+        if course_section.students:
+            section_students = course_section.students.split(',')
+        else:
+            section_students = []
+            logging.debug('***RAM*** section Students : ' + str(section_students))
         students = []
-        if s and len(s) > 0:
-#            for student in course_section.students.values():
-            for student in s:
-                this_student = Student.get_first_by_email(student)[0]
-                logging.debug('***RAM*** student = ' + str(this_student))
-                temp_student = {}
-                units_completed = tracker.get_unit_percent_complete(this_student)
-                progress = 0
-                for value in units_completed.values():
-                    progress += value
+        if section_students and len(section_students) > 0:
+            for student in section_students:
+                this_student = Student.get_first_by_email(student)[0]   # returns a tuple
+                # Guard against email for non-existent student
+                if this_student:
+                    logging.debug('***RAM*** student = ' + str(this_student))
+                    temp_student = {}
+                    units_completed = tracker.get_unit_percent_complete(this_student)
+                    progress = 0
+                    for value in units_completed.values():
+                        progress += value
                 
-                temp_student['unit_completion'] = units_completed
-                temp_student['course_progress'] = str(round(progress / len(units_completed) * 100,2))
-                temp_student['email'] = student
-                temp_student['name'] = this_student.name
-                students.append(temp_student)
+                    temp_student['unit_completion'] = units_completed
+                    temp_student['course_progress'] = str(round(progress / len(units_completed) * 100,2))
+                    temp_student['email'] = student
+                    temp_student['name'] = this_student.name
+                    students.append(temp_student)
 
         logging.debug('***RAM*** Students : ' + str(students))
 
-
         user_email = users.get_current_user().email()
-        self.template_value['section'] = { 'name' : course_section.name, 'description' : course_section.description }
-        self.template_value['teacher_email'] = user_email
-        self.template_value['section_name'] = course_section.name
+        self.template_value['section'] = { 'key': key, 'teacher': user_email, 'name' : course_section.name, 'description' : course_section.description }
         self.template_value['units'] = units_filtered
         self.template_value['lessons'] = lessons
         self.template_value['students'] = students
 
         self._render_roster()
-
-
-#         self.template_value['alerts'] = alerts
-#         self.template_value['disabled'] = disable
-#         self.template_value['xsrf_token'] = self.create_xsrf_token(
-#             TeacherDashboardHandler.DISPLAY_ROSTER_ACTION)
 #         #need to get progress values for ALL students since we show completion for every student
 #         if course_section.students and len(course_section.students) > 0:
 #             #course_section.students = sorted(course_section.students.values(), key=lambda k: (k['name']))

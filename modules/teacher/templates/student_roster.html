@@ -29,28 +29,28 @@
     <div class="gcb-aside">
       {% if section %}
        <h2>Student Roster for Course {{ section.name }}</h2>
-       <br /><b>Teacher:  {{ teacher_email }} </b>
-       <br /><b>Description: {{ section.description }}</b>
-        <p>
-          You can manage student enrollment here, as well as view a summary of each student's progress at the course, unit, and lesson level.
-          <br />Click here for <a target="_blank" href="https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY">instructions and documentation</a>.
-        </p>   
+       <table>
+        <tbody>
+         <tr>
+          <td style="width:40%">
+           <b>Teacher:  {{ section.teacher }} </b>
+           <br /><b>Description: {{ section.description }}</b>
+          </td>
+          <td>
+            You can manage student enrollment here, as well as view a summary of each student's progress at the course, unit, and lesson level. 
+            Click here for <a target="_blank" href="https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY">instructions and documentation</a>.
+          </td>
+         </tr>
+        </tbody>
+       </table>
+      <hr>
 
         <table id="buttons-table"> 
          <tr>
           <td>
-            <form id='add-students-button' action='teacher?action=add_students'  method='GET'>
-             <input type="hidden" name="action" value="add_students">
-             <button class="gcb-button" type="submit">+ Add Students</button>
-           </form>
-           <div style='clear: both; padding-top: 2px;' />
-          </td>
-          <td>
-            <form id='delete-students-button' action='teacher?action=remove_students'  method='GET'>
-             <input type="hidden" name="action" value="remove_students">
-             <button class="gcb-button" type="submit">- Remove Students</button>
-           </form>
-           <div style='clear: both; padding-top: 2px;' />
+            <a href="teacher?action=edit_section&key={{ section.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">
+               <button class="gcb-button" type="submit">Add / Remove Students</button>
+            </a>
           </td>
           <td>
            <b>Unit: </b> {% if units %} We have units {% endif %} 
@@ -64,7 +64,7 @@
         {% if students %}
         <div class="gcb-list gcb-list--autostripe xsrf-token-holder"
              data-status-xsrf-token-teacher-dashboard="{{ status_xsrf_token }}">
-         <h3>Students</h3>
+         <h2>Students</h2>
          <table>
           <thead>
            <tr>

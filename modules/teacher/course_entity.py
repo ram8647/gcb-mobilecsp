@@ -96,17 +96,27 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         schema.add_property(schema_fields.SchemaField(
             'key', 'ID', 'string', editable=False, hidden=True))
         schema.add_property(schema_fields.SchemaField(
+            'date', 'Date', 'datetime', editable=False, hidden=True,
+            description=messages.SECTION_DATE_DESCRIPTION))
+        schema.add_property(schema_fields.SchemaField(
             'name', 'Name', 'string',
             description=messages.SECTION_NAME_DESCRIPTION))
         schema.add_property(schema_fields.SchemaField(
             'description', 'Description', 'string',
-            description=messages.SECTION_BLURB_DESCRIPTION))
+            description=messages.SECTION_NAME_DESCRIPTION))
+        schema.add_property(schema_fields.SchemaField(
+            'students', 'Student Emails', 'text',
+            description=messages.SECTION_STUDENTS_DESCRIPTION,
+            optional=True))
         schema.add_property(schema_fields.SchemaField(
             'acadyr', 'Academic Year', 'string',
-            description=messages.ACADEMIC_YEAR_DESCRIPTION))
-#         schema.add_property(schema_fields.SchemaField(
-#             'date', 'Date', 'datetime',
-#             description=messages.SECTION_DATE_DESCRIPTION))
+            description=messages.ACADEMIC_YEAR_DESCRIPTION,
+            select_data=[
+                 ('2016-17', '2016-17'),
+                 ('2017-18', '2017-18'),
+                 ('2018-19', '2018-19'),
+                 ('2019-20', '2019-20')]))
+
         resources_display.LabelGroupsHelper.add_labels_schema_fields(
             schema, 'section')
         return schema
@@ -139,7 +149,8 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         # Format the internal date object as ISO 8601 datetime, with time
         # defaulting to 00:00:00
         date = entity_dict['date']
-        date = datetime.datetime(date.year, date.month, date.day)
+        if date:
+            date = datetime.datetime(date.year, date.month, date.day)
         entity_dict['date'] = date
 
         entity_dict.update(
@@ -151,7 +162,7 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
             self, 200, 'Success.',
             payload_dict=json_payload,
             xsrf_token=utils.XsrfTokenManager.create_xsrf_token(
-                'teacher-put'))
+                'section-put'))
 
     def put(self):
         """Handles REST PUT verb with JSON payload."""
@@ -181,8 +192,9 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         update_dict = transforms.json_to_dict(
             transforms.loads(payload), schema.get_json_schema_dict())
 
-#        # The datetime widget returns a datetime object and we need a UTC date.
-#        update_dict['date'] = update_dict['date'].date()
+        # The datetime widget returns a datetime object and we need a UTC date.
+        update_dict['date'] = update_dict['date'].date()
+        update_dict['students'] = ''.join(update_dict['students'].split())  # Remove whitespace
 
         entity.labels = common_utils.list_to_text(
             resources_display.LabelGroupsHelper.field_data_to_labels(
@@ -193,9 +205,11 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
         logging.debug('***RAM*** entity = ' + str(entity))
 
+        if not entity.date:
+            entity.date = datetime.datetime.now().date()
         entity.put()
 
-        transforms.send_json_response(self, 200, 'Saved.')
+        transforms.send_json_response(self, 200, 'Saved Section.')
 
     def delete(self):
         """Deletes a section."""

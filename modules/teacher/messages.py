@@ -23,7 +23,11 @@ Name of the course section.
 """
 
 SECTION_BLURB_DESCRIPTION = """
-Brief description of the section.
+Brief description of your course section.
+"""
+
+SECTION_STUDENTS_DESCRIPTION = """
+Enter student emails separated by commas.
 """
 
 SECTION_DATE_DESCRIPTION = """

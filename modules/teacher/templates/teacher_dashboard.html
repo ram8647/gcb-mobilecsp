@@ -73,12 +73,13 @@
         {% if teacher.sections %}
         <div class="gcb-list gcb-list--autostripe xsrf-token-holder"
              data-status-xsrf-token-teacher-dashboard="{{ status_xsrf_token }}">
+         <h2>Sections for Teacher {{ teacher_email }}</h2>
          <table>
           <thead>
            <tr>
             <th class="gcb-list__cell--icon"></th>
             <th class="gcb-list__cell--icon"></th>
-            <th>Sections for Teacher {{ teacher_email }}</th>
+            <th></th>
             <th class="gcb-list__cell--icon"></th>
            </tr>
           </thead>

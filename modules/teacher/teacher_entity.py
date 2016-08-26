@@ -37,7 +37,6 @@ import messages
 class TeacherEntity(entities.BaseEntity):
 
     """A class that represents a persistent database entity of teacher."""
-#    enrolled_on = db.DateTimeProperty(auto_now_add=True, indexed=True)
     enrolled_on = db.DateProperty()
     is_enrolled = db.BooleanProperty(indexed=False)
     is_active = db.BooleanProperty(indexed=False)
