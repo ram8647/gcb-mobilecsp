@@ -7,9 +7,9 @@
 # models.custom_modules.Module instance.
 #
 env_variables:
-  GCB_REGISTERED_MODULES_CUSTOM:
-    modules.teacher_dashboard.teacher_dashboard
-    modules.teacher.teacher
+#  GCB_REGISTERED_MODULES_CUSTOM:
+#    modules.teacher_dashboard.teacher_dashboard
+#    modules.teacher.teacher
 #    modules.my_extension_module
 #    my_extension.modules.widgets
 #    my_extension.modules.blivets

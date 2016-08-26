@@ -71,7 +71,8 @@ Basic outline
 -- Add quizly/ controller directory to the modules directory. This includes quizly.py
 -- Copy quizly/ source code to assets:  assets/lib/quizly
 -- Import module in main.py:  from modules.quizly import quizly
--- Register quizly module in main.py: quizly.register_module().enable()
+   Register quizly module in main.py: quizly.register_module().enable()
+   OR NEW in 1.10: register it custom.yaml (one or the other, not both)
 -- Edit /views/base_course.html as follows: 
      ...
      <script src="assets/lib/activity-generic-1.3.js"></script>
@@ -90,7 +91,8 @@ Basic outline
 >>>>>>>>>>>>>>>>>>>>>>        Khanex          <<<<<<<<<<<<<<<<<<<<<<<<
 -- Add khanex/ directory to the modules directory
 -- Import module in main.py:  from modules.khanex import khanex
--- Register khanex module in main.py: khanex.register_module().enable()
+   Register khanex module in main.py: khanex.register_module().enable()
+   OR NEW in 1.10: register it custom.yaml (one or the other, not both)
 
 >>>>>>>>>>>>>>>>>>>>>>   Lessons Framework and Hover <<<<<<<<<<<<<<<<<<<<<
 -- Copy the lessons/  folder into assets/lib/:   cp -r ../lessons assets/lib/
@@ -98,21 +100,14 @@ Basic outline
 
 >>>>>>>>>>>>>>>>>>>>>>       Teacher Dashboard          <<<<<<<<<<<<<<<<<<<<<<<<
 
--- Add teachers_dashboard directory to the modules directory
--- Add modules.teacher_dashboard.teacher_dashboard to custom.yaml
--- Import module in main.py:  from modules.teacher_dashboard import teacher_dashboard
--- Register teacher_dashboard module in main.py: teacher_dashboard.register_module().enable()
+-- Add teacher directory to the modules directory
+-- Add modules.teacher.teacher to custom.yaml
+   OR Import module in main.py:  from modules.teacher_dashboard import teacher_dashboard
+   AND Register teacher_dashboard module in main.py: teacher_dashboard.register_module().enable()
 -- In models.py Replace the user_id property in the EventEntity class to the following line
    user_id = db.StringProperty(indexed=True)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  V1.10 Upgrade issues !!!!!!!!!!!!!!!!!!!!!!!!
-
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Dashboard <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
--- Error in teacher_dashboard.py -- import tabs : no such file in v1.10.  The current version
-   is using tabs.Registry.register() to register the teacher dashboard.  This no longer works. 
-   Had to comment out much code in order to avoid Python errors. 
--- Update:  Dashboard has been fixed and updated to v1.10. 
 
 >>>>>>>>>>>>>>>>>>>>>>> NOT SURE IF THESE ARE NEEDED ANYMORE ?? <<<<<<<<<<<<<<<<<
  preview.html -- not sure what this does? 
