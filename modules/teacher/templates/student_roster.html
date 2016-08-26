@@ -16,6 +16,31 @@
 {% block assets %}
   {{ super() }}
   <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" type="text/css" href="assets/lib/lessons/tipped.css" />
+  <script src="assets/lib/lessons/tipped.js"></script>
+<!--  BUG?  Why can't I load these from resources directory. ??????  -->
+<!--   <link rel="stylesheet" type="text/css" href="{{resources_path}}/css/tipped.css" /> -->
+<!--   <script src="{{resources_path}}/js/tipped.js"></script> -->
+  <script>
+    // Script for adding hovers to some elements on the page.
+    $(document).ready(function() {
+      Tipped.create('.help', function(element) {
+    var help = $(element).data('id');
+    return documentation[help];
+        }, {
+          cache: false,
+            position: 'topleft'
+            });
+    });
+  
+    var documentation = { 
+      "quiz" : "Quiz scores gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson.",
+      "lesson" : "Lesson progress is the percentage of quizzes <b>attempted</b>, not the percentage of quizzes correct.",
+      "unit": "Unit progress is the percentage of lessons completed in that unit. Lessons that do not contain quizzes are considered complete when visited.",
+      "add/remove": "This button will let you add or remove students from your course.",
+      "dashboard": "The dashboard provides a detailed breakdown of a student's progress and performance.",
+    };
+  </script>
 {% endblock %}
 
 {% block top_content %}
@@ -48,9 +73,11 @@
         <table id="buttons-table"> 
          <tr>
           <td>
-            <a href="teacher?action=edit_section&key={{ section.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">
-               <button class="gcb-button" type="submit">Add / Remove Students</button>
-            </a>
+            <span class="hover help yui-wk-div" data-id="add/remove">
+              <a href="teacher?action=edit_section&key={{ section.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">
+                 <button class="gcb-button" type="submit">Add / Remove Students</button>
+              </a>
+            </span>
           </td>
           <td>
            <b>Unit: </b> {% if units %} We have units {% endif %} 
@@ -71,20 +98,22 @@
             <th class="gcb-list__cell--icon"></th>
             <th class="gcb-list__cell--icon">Name</th>
             <th class="gcb-list__cell--icon">Email</th>
-            <th class="gcb-list__cell--icon">Course/Unit Progress</th>
-            <th class="gcb-list__cell--icon">Lesson Progress</th>
-            <th class="gcb-list__cell--icon">Quiz Scores</th>
+            <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="unit">Course or Unit Progress</span></th>
+            <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="lesson">Lesson Progress</span></th>
+            <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="quiz">Quiz Scores</span></th>
            </tr>
           </thead>
           <tbody>
           {% for student in students %}
             <tr>
              <td>
-              <form id='view-dashboard-button' action='edit_sections?action=add_section'  method='GET'>
-                <input type="hidden" name="action" value="add_section">
-                <button class="gcb-button" type="submit">View Dashboard</button>
+                <form id='view-dashboard-button' action='edit_sections?action=add_section'  method='GET'>
+                  <input type="hidden" name="action" value="add_section">
+                  <span class="hover help yui-wk-div" data-id="dashboard">
+                    <button class="gcb-button" type="submit">View Dashboard</button>
+                  </span>
               </form>
-             </td>
+               </td>
              <td>
                 {{ student['name'] }}
              </td>

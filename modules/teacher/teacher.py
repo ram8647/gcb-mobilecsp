@@ -393,6 +393,7 @@ class TeacherDashboardHandler(
         logging.debug('***RAM*** Students : ' + str(students))
 
         user_email = users.get_current_user().email()
+        self.template_value['resources_path'] = RESOURCES_PATH
         self.template_value['section'] = { 'key': key, 'teacher': user_email, 'name' : course_section.name, 'description' : course_section.description }
         self.template_value['units'] = units_filtered
         self.template_value['lessons'] = lessons
@@ -563,7 +564,6 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 
 def notify_module_enabled():
     """Handles things after module has been enabled."""
-
 
 custom_module = None
 
