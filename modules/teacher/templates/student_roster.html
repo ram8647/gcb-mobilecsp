@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/tipped.css" />
   <script src="assets/lib/lessons/tipped.js"></script>
-<!--  BUG?  Why can't I load these from resources directory. ??????  -->
+<!--  BUG?  Why can't I load these from resources directory. 404 error ??????  -->
 <!--   <link rel="stylesheet" type="text/css" href="{{resources_path}}/css/tipped.css" /> -->
 <!--   <script src="{{resources_path}}/js/tipped.js"></script> -->
   <script>
@@ -39,7 +39,67 @@
       "unit": "Unit progress is the percentage of lessons completed in that unit. Lessons that do not contain quizzes are considered complete when visited.",
       "add/remove": "This button will let you add or remove students from your course.",
       "dashboard": "The dashboard provides a detailed breakdown of a student's progress and performance.",
+      "unitselect": "Choose an option here to see student performance for a particular unit.",
+      "lessonselect": "After choosing a unit option choose an option here to see student performance for a particular lesson.",
     };
+  </script>
+  <script type="text/javascript">
+    $(function() {
+      // Handles updating the lesson select options and completion values
+      $('.unit-select').change(function() {
+        $('#questions-container').empty();
+        var newOptions = [];
+        if (this.value != 'course_completion') {
+          var lessons = lessonsObject[this.value];
+          for (var i =0; i < lessons.length; i++) {
+            newOptions.push({
+              key: lessons[i].lesson_id,
+              value: lessons[i].title
+            });
+          }
+        } else {
+          newOptions.push({
+            key: 'NA',
+            value: 'N/A'
+          });
+        }
+        var lessonSelect = $(".lesson-select");
+          lessonSelect.empty(); // remove old options
+          $.each(newOptions, function(value,key) {
+            lessonSelect.append($("<option></option>")
+              .attr("value", key.key).text(key.value));
+          });
+
+         //defined in popup.js
+//         RebuildCompletionColumn(window.students, this, $('.lesson-select'));
+
+         if ($($('.lesson-select')).val() !== 'NA') {
+//           var lessonScores = retrieveLessonScores(window.scores, $(this).val(), $($('.lesson-select')).val());
+//           var activityTable = new ActivityTable(lessonScores);
+//           activityTable.buildTable($(this).val(), $($('.lesson-select')).val(),
+//             $($('.unit-select option:selected')).text(),
+//             $($('.lesson-select option:selected')).text()).appendTo('#questions-container');
+         }
+      });
+    });
+    $(function() {
+      $('.lesson-select').change(function() {
+        //defined in popup.js
+//        RebuildCompletionColumn(window.students, $('.unit-select'), this);
+
+        $('#questions-container').empty();
+        if ($(this).val() !== 'NA') {
+//          var lessonScores = retrieveLessonScores(window.scores, $($('.unit-select')).val(), $(this).val());
+//          var activityTable = new ActivityTable(lessonScores);
+//          activityTable.buildTable($($('.unit-select')).val(), $(this).val(), $($('.unit-select')).text(),
+//            $($('.lesson-select option:selected')).text()).appendTo('#questions-container');
+        }
+      });
+    });
+
+    function rebuildLessonSelect(unitId) {
+      var options = {};
+    }
   </script>
 {% endblock %}
 
@@ -48,6 +108,13 @@
 
 {% block main_content %}
 {{ main_content }}
+{% if lessons %}
+  <script>
+  var lessonsJson = '{{ lessons|safe }}';
+  var lessonsObject = jQuery.parseJSON(lessonsJson);
+  </script>
+{% endif %}
+
 {% if not disabled %}
 <div id="gcb-main">
   <div class="gcb-article tab-content">
@@ -80,10 +147,22 @@
             </span>
           </td>
           <td>
-           <b>Unit: </b> {% if units %} We have units {% endif %} 
+           <span class="hover help yui-wk-div" data-id="unitselect"><label><b>Unit: </b></label></span>
+           <select class="unit-select">
+              <option value="course_completion">Course</option>
+              {% if units %} 
+                {% for unit in units %}
+                   {% if unit.type == 'U' %}
+                         <option value="{{ unit.unit_id }}">{{ unit.title }}</option>
+                   {% endif %}
+                {% endfor %}
+              {% endif %} 
           </td>
           <td>
-           <b>Lessons: </b> {% if lessons %} We have lessons {% endif %} 
+           <span class="hover help yui-wk-div" data-id="lessonselect"><label style="margin-left: 10px;"><b>Lessons: </b></label></span>
+           <select class="lesson-select" style="min-width: 200px;">
+              <option value="N/A">N/A</option>
+           </select>
           </td>
          </tr>
         </table>
@@ -124,10 +203,10 @@
                 {{ student['course_progress'] }}
              </td>
              <td>
-                {{ student['course_progress'] }}
+                N/A
              </td> 
              <td>
-                Quiz: {{ student['quiz_score'] }}
+                N/A
              </td> 
             </tr>
           {% endfor %}
@@ -140,6 +219,7 @@
       {% endif %}
     </div>
   </div>
+  <div id="questions-container"></div>
 </div>
 {% else %}
 {# I18N: Shown if the user is not a registered teacher. #}

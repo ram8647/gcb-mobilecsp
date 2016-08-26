@@ -377,7 +377,7 @@ class TeacherDashboardHandler(
                 this_student = Student.get_first_by_email(student)[0]   # returns a tuple
                 # Guard against email for non-existent student
                 if this_student:
-                    logging.debug('***RAM*** student = ' + str(this_student))
+#                    logging.debug('***RAM*** student = ' + str(this_student))
                     temp_student = {}
                     units_completed = tracker.get_unit_percent_complete(this_student)
                     progress = 0
@@ -390,35 +390,20 @@ class TeacherDashboardHandler(
                     temp_student['name'] = this_student.name
                     students.append(temp_student)
 
-        logging.debug('***RAM*** Students : ' + str(students))
+
+        logging.debug('***RAM*** Units  : ' + str(units_filtered))
+        logging.debug('***RAM*** Units completed : ' + str(units_completed))
+        logging.debug('***RAM*** Lessons : ' + str(lessons))
+#        logging.debug('***RAM*** Students : ' + str(students))
 
         user_email = users.get_current_user().email()
         self.template_value['resources_path'] = RESOURCES_PATH
         self.template_value['section'] = { 'key': key, 'teacher': user_email, 'name' : course_section.name, 'description' : course_section.description }
         self.template_value['units'] = units_filtered
-        self.template_value['lessons'] = lessons
+        self.template_value['lessons'] = lessons 
         self.template_value['students'] = students
 
         self._render_roster()
-#         #need to get progress values for ALL students since we show completion for every student
-#         if course_section.students and len(course_section.students) > 0:
-#             #course_section.students = sorted(course_section.students.values(), key=lambda k: (k['name']))
-#             for student in course_section.students.values():
-#                 this_student = Teacher.get_student_by_email(student['email'])
-#                 temp_student = {}
-
-#                 temp_student['unit_completion'] = teacher_parsers.StudentProgressTracker.get_unit_completion(
-#                     this_student, self.get_course())
-#                 temp_student['course_completion'] = teacher_parsers.StudentProgressTracker.get_overall_progress(
-#                     this_student, self.get_course())
-#                 temp_student['detailed_course_completion'] = teacher_parsers.StudentProgressTracker.get_detailed_progress(
-#                     this_student, self.get_course())
-#                 temp_student['email'] = student['email']
-#                 temp_student['name'] = student['name']
-
-#                 students[student['email']] = temp_student
-
-#         course_section.students = students
 
 #         #passing in students as JSON so JavaScript can handle updating completion values easier
 #         template_values['students_json'] = transforms.dumps(course_section.students, {})
