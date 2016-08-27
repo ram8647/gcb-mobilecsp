@@ -34,8 +34,8 @@
     });
   
     var documentation = { 
-      "quiz" : "Quiz scores gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson.",
-      "lesson" : "Lesson progress is the percentage of quizzes <b>attempted</b>, not the percentage of quizzes correct.",
+      "quiz" : "For a given lesson, quiz scores gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson.",
+      "lesson" : "For a given unit, lesson progress is either complete (100 %), in-progress (50 %) or not started (0 %).",
       "unit": "Unit progress is the percentage of lessons completed in that unit. Lessons that do not contain quizzes are considered complete when visited.",
       "add/remove": "This button will let you add or remove students from your course.",
       "dashboard": "The dashboard provides a detailed breakdown of a student's progress and performance.",
@@ -44,12 +44,32 @@
     };
   </script>
   <script type="text/javascript">
+    // Performs a lookup in the studentsJs table for each student
+    function update_section_stats(unit_id, lesson_id) {
+      for (var i=0; i < studentsJs.length; i++) {
+         var student = studentsJs[i];
+         var unit_cell = document.getElementById('student-unit-progress-cell-' + (i+1)); // table cells are 1-indexed
+         var lesson_cell = document.getElementById('student-lesson-progress-cell-' + (i+1)); // table cells are 1-indexed
+         if (unit_id != 'course_completion') {
+           unit_cell.innerHTML = student['progress_dict']['unit_completion'][unit_id]
+           if (lesson_id != "NA")
+             lesson_cell.innerHTML = student['progress_dict']['lessons_progress'][unit_id][lesson_id] / 2 * 100
+           else
+             lesson_cell.innerHTML = "N/A";
+         } else {
+           unit_cell.innerHTML = student['progress_dict']['course_progress']
+           lesson_cell.innerHTML = "N/A";
+         }
+      }
+    }
+
     $(function() {
       // Handles updating the lesson select options and completion values
       $('.unit-select').change(function() {
         $('#questions-container').empty();
         var newOptions = [];
         if (this.value != 'course_completion') {
+          document.getElementById('course-unit-progress-heading').innerHTML = 'Unit Progress %';
           var lessons = lessonsObject[this.value];
           for (var i =0; i < lessons.length; i++) {
             newOptions.push({
@@ -58,6 +78,7 @@
             });
           }
         } else {
+          document.getElementById('course-unit-progress-heading').innerHTML = 'Course Progress %';
           newOptions.push({
             key: 'NA',
             value: 'N/A'
@@ -69,6 +90,12 @@
             lessonSelect.append($("<option></option>")
               .attr("value", key.key).text(key.value));
           });
+
+        // Update the stats for this page
+        var sel = document.getElementById('lesson-select-widget');
+        var lesson_id = sel.options[sel.selectedIndex].value;
+        update_section_stats(this.value, lesson_id);
+
 
          //defined in popup.js
 //         RebuildCompletionColumn(window.students, this, $('.lesson-select'));
@@ -89,6 +116,9 @@
 
         $('#questions-container').empty();
         if ($(this).val() !== 'NA') {
+          var sel = document.getElementById('unit-select-widget');
+          var unit_id = sel.options[sel.selectedIndex].value;
+          update_section_stats(unit_id, this.value);
 //          var lessonScores = retrieveLessonScores(window.scores, $($('.unit-select')).val(), $(this).val());
 //          var activityTable = new ActivityTable(lessonScores);
 //          activityTable.buildTable($($('.unit-select')).val(), $(this).val(), $($('.unit-select')).text(),
@@ -114,6 +144,13 @@
   var lessonsObject = jQuery.parseJSON(lessonsJson);
   </script>
 {% endif %}
+{% if students %}
+  <script>
+  var studentsArray = '{{ students_json | safe  }}'; 
+  var studentsJs = jQuery.parseJSON(studentsArray)
+  </script>
+{% endif %}
+
 
 {% if not disabled %}
 <div id="gcb-main">
@@ -148,7 +185,7 @@
           </td>
           <td>
            <span class="hover help yui-wk-div" data-id="unitselect"><label><b>Unit: </b></label></span>
-           <select class="unit-select">
+           <select id="unit-select-widget"  class="unit-select">
               <option value="course_completion">Course</option>
               {% if units %} 
                 {% for unit in units %}
@@ -160,7 +197,7 @@
           </td>
           <td>
            <span class="hover help yui-wk-div" data-id="lessonselect"><label style="margin-left: 10px;"><b>Lessons: </b></label></span>
-           <select class="lesson-select" style="min-width: 200px;">
+           <select id="lesson-select-widget" class="lesson-select" style="min-width: 200px;">
               <option value="N/A">N/A</option>
            </select>
           </td>
@@ -177,39 +214,39 @@
             <th class="gcb-list__cell--icon"></th>
             <th class="gcb-list__cell--icon">Name</th>
             <th class="gcb-list__cell--icon">Email</th>
-            <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="unit">Course or Unit Progress</span></th>
+            <th id="course-unit-progress-heading" class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="unit">Course Progress %</span></th>
             <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="lesson">Lesson Progress</span></th>
-            <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="quiz">Quiz Scores</span></th>
+            <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="quiz">Quiz Progress</span></th>
            </tr>
           </thead>
-          <tbody>
+          <tbody> 
           {% for student in students %}
             <tr>
              <td>
-                <form id='view-dashboard-button' action='edit_sections?action=add_section'  method='GET'>
+                <form id='view-dashboard-button-{{loop.index}}' action='edit_sections?action=add_section'  method='GET'>
                   <input type="hidden" name="action" value="add_section">
                   <span class="hover help yui-wk-div" data-id="dashboard">
                     <button class="gcb-button" type="submit">View Dashboard</button>
                   </span>
               </form>
                </td>
-             <td>
-                {{ student['name'] }}
+             <td id="student-name-cell-{{loop.index}}">
+               {{ student.name }}
              </td>
-             <td>
-                {{ student['email'] }}
+             <td id="student-email-cell'{{loop.index}}">
+                {{ student.email }}
              </td>
-             <td>
-                {{ student['course_progress'] }}
+             <td id="student-unit-progress-cell-{{loop.index}}">
+                {{ student.progress_dict.course_progress }}
              </td>
-             <td>
-                N/A
+             <td id="student-lesson-progress-cell-{{loop.index}}">
+               N/A
              </td> 
-             <td>
-                N/A
+             <td id="student-quizzes-cell-{{loop.index}}">
+               N/A
              </td> 
             </tr>
-          {% endfor %}
+           {% endfor %}
           </tbody>
          </table>
         {% else %}

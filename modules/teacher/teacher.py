@@ -33,6 +33,7 @@ import appengine_config
 from common import tags
 from common import utils as common_utils
 from common import schema_fields
+from common import jinja_utils
 from controllers import utils
 from models import resources_display
 from models import custom_modules
@@ -330,6 +331,100 @@ class TeacherDashboardHandler(
                     self.create_xsrf_token(xsrf_token_name)),
             }))
 
+    def get_lessons_for_roster(self, units, course):
+        lessons = {}
+        for unit in units:
+            unit_lessons = course.get_lessons(unit.unit_id)
+            unit_lessons_filtered = []
+            for lesson in unit_lessons:
+                unit_lessons_filtered.append({
+                    'title': lesson.title,
+                    'unit_id': lesson.unit_id,
+                    'lesson_id': lesson.lesson_id
+                })
+            lessons[unit.unit_id] = unit_lessons_filtered
+        
+        # Convert to JSON
+        return transforms.dumps(lessons, {}) 
+
+    def calculate_lessons_progress(self, lessons_progress):
+        """ Returns a dict summarizing student progress on the lessons in each unit."""
+
+#        logging.debug('***RAM*** lessons_progress ' + str(lessons_progress))
+        lessons = {}
+        total = 0
+        for key in lessons_progress:
+            progress = lessons_progress[key]['html']
+            if  progress == 2:  # 2=complete, 1= inprogress, 0=unstarted
+                total += 1
+            lessons[str(key)] = progress
+        lessons['progress'] = str(round(total / len(lessons) * 100, 2))
+        logging.debug('***RAM*** calc lessons = ' + str(lessons))
+        return lessons
+                            
+    def calculate_student_progress_data(self, student, course, tracker, units):
+       """ Returns a dict that summarizes student progress for course, units, and lessons.
+
+           The dict takes the form: {'course_progress': c, 'unit_completion': u, 'lessons_progress': p}
+           where 'course_progress' is a number giving the overall percentage of lessons completed
+           as calculated by GCB, 'unit_completion' gives the completion percentage of each unit, 
+           as calculated by GCB, and 'lessons_progress', gives a summary of the lesson progress
+           for each unit, as calculated by us.
+       """
+
+        # Progress on each unit in the course -- an unitid index dict
+        unit_progress_raw = tracker.get_unit_percent_complete(student)
+        unit_progress_data = {}
+        for key in unit_progress_raw:
+            unit_progress_data[str(key)] = str(round(unit_progress_raw[key] * 100,2));
+#        logging.debug('***RAM*** unit_progress_data ' + str(unit_progress_data))
+
+        # An object that summarizes student progress
+        student_progress = tracker.get_or_create_progress(student)
+
+        # Overall progress in the course -- a per cent, rounded to 3 digits
+        course_progress = 0
+        for value in unit_progress_raw.values():
+            course_progress += value
+        course_progress = str(round(course_progress / len(unit_progress_data) * 100,2))
+
+        # Progress on each lesson in the coure -- a tuple-index dict:  dict[(unitid,lessonid)] 
+        units_lessons_progress = {}
+        for unit in units:
+            logging.debug('***RAM*** unit = ' + str(unit.unit_id))
+            # Don't show assessments that are part of unit
+            if course.get_parent_unit(unit.unit_id):
+                continue
+            if unit.unit_id in unit_progress_raw:
+                lessons_progress = tracker.get_lesson_progress(student, unit.unit_id, student_progress)
+                logging.debug('***RAM*** lesson_status = ' + str(lessons_progress))
+                units_lessons_progress[str(unit.unit_id)] = self.calculate_lessons_progress(lessons_progress)
+        return {'unit_completion':unit_progress_data, 'course_progress':course_progress, 'lessons_progress': units_lessons_progress }
+
+    def create_student_data_table(self, course, section, tracker, units):
+        """ Creates a lookup table containing all student progress data 
+            for every unit, lesson, and quiz. 
+        """
+        if section.students:
+            index = section.students.split(',')   # comma-delimited emails
+        else:
+            index = []
+#        logging.debug('***RAM*** students index : ' + str(index))
+
+        students = []
+        if len(index) > 0:
+            for email in index:
+                student_dict = {}
+                student = Student.get_first_by_email(email)[0]  # returns a tuple
+                if student:
+#                    progress_dict = { 'course': '50%', 'lesson': '20%' } #self.calculate_student_progress_data(student,course,tracker,units)
+                    progress_dict = self.calculate_student_progress_data(student,course,tracker,units)
+                    student_dict['name'] = student.name
+                    student_dict['email'] = student.email
+                    student_dict['progress_dict'] = progress_dict
+                    students.append(student_dict)
+        return students
+
     def get_display_roster(self):
         """Callback method to display the Roster view. 
 
@@ -350,51 +445,15 @@ class TeacherDashboardHandler(
         units_filtered = filter(lambda x: x.type == 'U', units) #filter out assessments
 
         # And lessons
-        lessons = {}
-        for unit in units_filtered:
-            unit_lessons = this_course.get_lessons(unit.unit_id)
-            unit_lessons_filtered = []
-            for lesson in unit_lessons:
-                unit_lessons_filtered.append({
-                    'title': lesson.title,
-                    'unit_id': lesson.unit_id,
-                    'lesson_id': lesson.lesson_id
-                })
-            lessons[unit.unit_id] = unit_lessons_filtered
-        
-        # Convert to JSON
-        lessons = transforms.dumps(lessons, {}) 
+        lessons = self.get_lessons_for_roster(units_filtered, this_course)
 
-        # Get all students in this section 
-        if course_section.students:
-            section_students = course_section.students.split(',')
-        else:
-            section_students = []
-            logging.debug('***RAM*** section Students : ' + str(section_students))
-        students = []
-        if section_students and len(section_students) > 0:
-            for student in section_students:
-                this_student = Student.get_first_by_email(student)[0]   # returns a tuple
-                # Guard against email for non-existent student
-                if this_student:
-#                    logging.debug('***RAM*** student = ' + str(this_student))
-                    temp_student = {}
-                    units_completed = tracker.get_unit_percent_complete(this_student)
-                    progress = 0
-                    for value in units_completed.values():
-                        progress += value
-                
-                    temp_student['unit_completion'] = units_completed
-                    temp_student['course_progress'] = str(round(progress / len(units_completed) * 100,2))
-                    temp_student['email'] = student
-                    temp_student['name'] = this_student.name
-                    students.append(temp_student)
+        # Get students and progress data for this section 
+        students = self.create_student_data_table(this_course, course_section, tracker, units_filtered)
 
-
-        logging.debug('***RAM*** Units  : ' + str(units_filtered))
-        logging.debug('***RAM*** Units completed : ' + str(units_completed))
-        logging.debug('***RAM*** Lessons : ' + str(lessons))
-#        logging.debug('***RAM*** Students : ' + str(students))
+#        logging.debug('***RAM*** Units  : ' + str(units_filtered))
+#        logging.debug('***RAM*** Units completed : ' + str())
+#        logging.debug('***RAM*** Lessons : ' + str(lessons))
+        logging.debug('***RAM*** Students : ' + str(students))
 
         user_email = users.get_current_user().email()
         self.template_value['resources_path'] = RESOURCES_PATH
@@ -402,25 +461,9 @@ class TeacherDashboardHandler(
         self.template_value['units'] = units_filtered
         self.template_value['lessons'] = lessons 
         self.template_value['students'] = students
-
+        self.template_value['students_json'] = transforms.dumps(students, {})
+       
         self._render_roster()
-
-#         #passing in students as JSON so JavaScript can handle updating completion values easier
-#         template_values['students_json'] = transforms.dumps(course_section.students, {})
-#         template_values['namespace'] = self.get_course()._namespace.replace('ns_', '')
-
-#         if course_section:
-#             template_values['section'] = course_section
-
-#         #render student_list.html for Roster view
-#         main_content = self.get_template(
-#             'student_list.html', [TEMPLATES_DIR]).render(template_values)
-
-#         #DashboardHandler renders the page -- that won't work 
-#         self.render_page({
-#             'page_title': self.format_title('Student List'),
-#             'main_content': jinja2.utils.Markup(main_content)})
-
 
 class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 
