@@ -34,7 +34,7 @@
     });
   
     var documentation = { 
-      "quiz" : "For a given lesson, quiz scores gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson.",
+      "quiz" : "For a given lesson, quiz scores gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson. N/A means no quizzes were attempted.",
       "lesson" : "For a given unit, lesson progress is either complete (100 %), in-progress (50 %) or not started (0 %).",
       "unit": "Unit progress is the percentage of lessons completed in that unit. Lessons that do not contain quizzes are considered complete when visited.",
       "add/remove": "This button will let you add or remove students from your course.",
@@ -44,12 +44,25 @@
     };
   </script>
   <script type="text/javascript">
+    function get_quiz_ratio(student, unit, lesson) {
+      var ratio = "N/A";
+      if (student['scores'][unit]) {
+        if (student['scores'][unit][lesson]) {
+          ratio = student['scores'][unit][lesson]['ratio'];
+        }
+      }
+      return ratio;
+    }
+
     // Performs a lookup in the studentsJs table for each student
     function update_section_stats(unit_id, lesson_id) {
       for (var i=0; i < studentsJs.length; i++) {
          var student = studentsJs[i];
          var unit_cell = document.getElementById('student-unit-progress-cell-' + (i+1)); // table cells are 1-indexed
          var lesson_cell = document.getElementById('student-lesson-progress-cell-' + (i+1)); // table cells are 1-indexed
+         var quizzes_cell = document.getElementById('student-quizzes-cell-' + (i+1)); // table cells are 1-indexed
+         var quiz_ratio = get_quiz_ratio(student, unit_id,lesson_id);
+         quizzes_cell.innerHTML = quiz_ratio;
          if (unit_id != 'course_completion') {
            unit_cell.innerHTML = student['progress_dict']['unit_completion'][unit_id]
            if (lesson_id != "NA")

@@ -41,8 +41,10 @@ from models import entities
 from models import models
 from models import roles
 from models import transforms
+from models import utils as models_utils
 from models.models import MemcacheManager
 from models.models import Student
+from models.models import EventEntity
 from modules.teacher import messages
 from modules.dashboard import dashboard
 from modules.oeditor import oeditor
@@ -56,6 +58,7 @@ from course_entity import SectionItemRESTHandler
 from teacher_entity import TeacherEntity
 from teacher_entity import TeacherItemRESTHandler
 from teacher_entity import TeacherRights
+from student_activites import ActivityScoreParser
 
 MODULE_NAME = 'teacher'
 MODULE_TITLE = 'Teacher Dashboard'
@@ -359,18 +362,18 @@ class TeacherDashboardHandler(
                 total += 1
             lessons[str(key)] = progress
         lessons['progress'] = str(round(total / len(lessons) * 100, 2))
-        logging.debug('***RAM*** calc lessons = ' + str(lessons))
+#        logging.debug('***RAM*** calc lessons = ' + str(lessons))
         return lessons
                             
     def calculate_student_progress_data(self, student, course, tracker, units):
-       """ Returns a dict that summarizes student progress for course, units, and lessons.
+        """ Returns a dict that summarizes student progress for course, units, and lessons.
 
            The dict takes the form: {'course_progress': c, 'unit_completion': u, 'lessons_progress': p}
            where 'course_progress' is a number giving the overall percentage of lessons completed
            as calculated by GCB, 'unit_completion' gives the completion percentage of each unit, 
            as calculated by GCB, and 'lessons_progress', gives a summary of the lesson progress
            for each unit, as calculated by us.
-       """
+        """
 
         # Progress on each unit in the course -- an unitid index dict
         unit_progress_raw = tracker.get_unit_percent_complete(student)
@@ -381,6 +384,7 @@ class TeacherDashboardHandler(
 
         # An object that summarizes student progress
         student_progress = tracker.get_or_create_progress(student)
+#        logging.debug('***RAM*** student_progress ' + str(student_progress))
 
         # Overall progress in the course -- a per cent, rounded to 3 digits
         course_progress = 0
@@ -391,15 +395,36 @@ class TeacherDashboardHandler(
         # Progress on each lesson in the coure -- a tuple-index dict:  dict[(unitid,lessonid)] 
         units_lessons_progress = {}
         for unit in units:
-            logging.debug('***RAM*** unit = ' + str(unit.unit_id))
+#            logging.debug('***RAM*** unit = ' + str(unit.unit_id))
             # Don't show assessments that are part of unit
             if course.get_parent_unit(unit.unit_id):
                 continue
             if unit.unit_id in unit_progress_raw:
                 lessons_progress = tracker.get_lesson_progress(student, unit.unit_id, student_progress)
-                logging.debug('***RAM*** lesson_status = ' + str(lessons_progress))
+#                logging.debug('***RAM*** lesson_status = ' + str(lessons_progress))
                 units_lessons_progress[str(unit.unit_id)] = self.calculate_lessons_progress(lessons_progress)
         return {'unit_completion':unit_progress_data, 'course_progress':course_progress, 'lessons_progress': units_lessons_progress }
+
+    def retrieve_student_scores_and_attempts(self, student_email, course):
+        scores = {}
+
+        student = Student.get_first_by_email(student_email)[0]  # returns a tuple
+
+        scores = ActivityScoreParser.get_activity_scores([student.user_id], course, True)
+        logging.debug('***RAM*** get activity scores ' + str(scores))
+      
+        return scores
+
+    def calculate_performance_ratio(self, scores):
+        for unit in scores:
+            for lesson in scores[unit]:
+                n_questions = 0
+                n_correct = 0
+                for quest in scores[unit][lesson]:
+                    n_questions += 1
+                    n_correct += scores[unit][lesson][quest]['score']
+                scores[unit][lesson]['ratio'] = str(n_correct) + "/" + str(n_questions)
+        return scores
 
     def create_student_data_table(self, course, section, tracker, units):
         """ Creates a lookup table containing all student progress data 
@@ -417,8 +442,11 @@ class TeacherDashboardHandler(
                 student_dict = {}
                 student = Student.get_first_by_email(email)[0]  # returns a tuple
                 if student:
-#                    progress_dict = { 'course': '50%', 'lesson': '20%' } #self.calculate_student_progress_data(student,course,tracker,units)
                     progress_dict = self.calculate_student_progress_data(student,course,tracker,units)
+                    scores = self.retrieve_student_scores_and_attempts(email, course)
+                    student_dict['attempts'] = scores['attempts']
+#                    student_dict['scores'] = scores['scores']
+                    student_dict['scores'] = self.calculate_performance_ratio(scores['scores'])
                     student_dict['name'] = student.name
                     student_dict['email'] = student.email
                     student_dict['progress_dict'] = progress_dict
@@ -453,7 +481,7 @@ class TeacherDashboardHandler(
 #        logging.debug('***RAM*** Units  : ' + str(units_filtered))
 #        logging.debug('***RAM*** Units completed : ' + str())
 #        logging.debug('***RAM*** Lessons : ' + str(lessons))
-        logging.debug('***RAM*** Students : ' + str(students))
+#        logging.debug('***RAM*** Students : ' + str(students))
 
         user_email = users.get_current_user().email()
         self.template_value['resources_path'] = RESOURCES_PATH
@@ -461,7 +489,7 @@ class TeacherDashboardHandler(
         self.template_value['units'] = units_filtered
         self.template_value['lessons'] = lessons 
         self.template_value['students'] = students
-        self.template_value['students_json'] = transforms.dumps(students, {})
+        self.template_value['students_json'] = transforms.dumps(students, {})  # for use with javascript
        
         self._render_roster()
 
