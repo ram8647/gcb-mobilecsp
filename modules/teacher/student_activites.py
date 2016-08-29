@@ -16,7 +16,6 @@ from models.models import MemcacheManager
 
 from models.progress import UnitLessonCompletionTracker
 
-
 class ActivityScoreParser(jobs.MapReduceJob):
     """class to parse the data returned with activities"""
     def __init__(self):
@@ -92,7 +91,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
             #add score to right lesson
             temp_index = data['instanceid']
-            logging.debug('***********RAM************** data[instanceid] = ' + temp_index)
+#            logging.debug('***********RAM************** data[instanceid] = ' + temp_index)
 
             try: 
                 question_info = questions[temp_index]
@@ -131,12 +130,12 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 student_answers[question_info['unit']] = unit_answers
 
                 self.activity_scores[student.email] = student_answers
-                self.activity_scores  = student_answers
             except:
-#                logging.warning('***********RAM************** bad key ' + temp_index)
+                logging.warning('***********RAM************** bad key ' + temp_index)
                 self.activity_scores = { }
+#                logging.debug('***RAM*** num_attempts_dict ' + str(self.num_attempts_dict))
 
-#            logging.debug('***RAM*** num_attempts_dict ' + str(self.num_attempts_dict))
+        logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
         return self.activity_scores
 
     def build_missing_score(self, question, question_info, student_id, unit_id, lesson_id, sequence=-1):
@@ -180,7 +179,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
             question_answer_dict['weighted_score'] = 0
             question_answer_dict['tallied'] = False
             question_answer_dict['possible_points'] = possible_score
-            question_answer_dict['choices'] = choices
+#            question_answer_dict['choices'] = choices
 
             unit = self.activity_scores[student_id].get(unit_id, {})
             lesson = unit.get(lesson_id, {})
@@ -198,7 +197,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
             question_answer_dict['weighted_score'] = question_answer['weighted_score']
             question_answer_dict['tallied'] = question_answer['tallied']
             question_answer_dict['possible_points'] = possible_score
-            question_answer_dict['choices'] = choices
+#            question_answer_dict['choices'] = choices
 
             self.activity_scores[student_id][unit_id][lesson_id][sequence] = question_answer_dict
 
@@ -227,12 +226,12 @@ class ActivityScoreParser(jobs.MapReduceJob):
     def get_student_completion_data(cls, course):
         """Retrieves student completion data for the course."""
 
-#        logging.debug('***RAM*** get_student_completion_data ' + str(course))
+        logging.warning('***RAM*** get_student_completion_data ' + str(course))
         completion_tracker = UnitLessonCompletionTracker(course)
         questions_dict = completion_tracker.get_id_to_questions_dict()
-#        for q in questions_dict:
-#            logging.warning('***RAM*** key: ' + q)
-#            logging.warning('***RAM*** dict ' + str(questions_dict[q]))
+        for q in questions_dict:
+            logging.warning('***RAM*** key: ' + q)
+            logging.warning('***RAM*** dict ' + str(questions_dict[q]))
 
     @classmethod
     def get_activity_scores(cls, student_user_ids, course, force_refresh = False):
@@ -312,7 +311,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
         score_data['date'] = cached_date
         score_data['scores'] = activityParser.activity_scores
         score_data['attempts'] = activityParser.num_attempts_dict
-        logging.info('***RAM*** get_activity_scores attempts =  ' + str(score_data['attempts']))
+        logging.debug('***RAM*** get_activity_scores returning: ' + str(score_data['attempts']))
 
         return score_data
 

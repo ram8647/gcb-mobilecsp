@@ -421,11 +421,12 @@ class TeacherDashboardHandler(
         student = Student.get_first_by_email(student_email)[0]  # returns a tuple
 
         scores = ActivityScoreParser.get_activity_scores([student.user_id], course, True)
-        logging.debug('***RAM*** get activity scores ' + str(scores))
+#        logging.debug('***RAM*** get activity scores ' + str(scores))
       
         return scores
 
-    def calculate_performance_ratio(self, scores):
+    def calculate_performance_ratio(self, aggregate_scores, email): 
+        scores = aggregate_scores[email]
         for unit in scores:
             for lesson in scores[unit]:
                 n_questions = 0
@@ -444,7 +445,7 @@ class TeacherDashboardHandler(
             scores = self.retrieve_student_scores_and_attempts(email, course)
             student_dict['attempts'] = scores['attempts']
 #                    student_dict['scores'] = scores['scores']
-            student_dict['scores'] = self.calculate_performance_ratio(scores['scores'])
+            student_dict['scores'] = self.calculate_performance_ratio(scores['scores'], email)
             student_dict['name'] = student.name
             student_dict['email'] = student.email
             student_dict['progress_dict'] = progress_dict
