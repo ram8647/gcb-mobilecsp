@@ -17,7 +17,8 @@
   {{ super() }}
   <!-- BUG:  This should go into modules/teacher/resources/css but it doesn't work there. -->
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/student_progress.css" />
-
+  <link rel="stylesheet" type="text/css" href="assets/lib/lessons/student_list.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
 
   <script>
      function hasClass(elem, className) {
@@ -65,7 +66,8 @@
            var uid = lessons[k]['unit_id'];
            row = table.insertRow(k+1);
            cell = row.insertCell(0);
-           cell.innerHTML = "<div style='color:blue'; unit_id='" + uid + "' lesson_id='" + lid + "' class='lesson-title'> " +  lessons[k]['title'] + "</div>";
+           cell.innerHTML = "<div style='color:blue'; unit_id='" + uid + "' lesson_id='" + lid + "' class='lesson-title'> " +  lessons[k]['title']  
+             + "&nbsp; <span class='zmdi zmdi-eye' ></span></div>";
            cell = row.insertCell(1);
            var progress = studentJs['progress_dict']['lessons_progress'][uid][lid]/2;   // 0, 1, or 2
            cell.innerHTML = progress * 100  + ' %';
@@ -81,10 +83,13 @@
         }
 
         // Add handlers to the titles -- hasClass is defined above
+        // The else clause handles a <span> inside a <div> that contains unit_id and lesson_id
         document.addEventListener('click', function (e) {
           if (hasClass(e.target, 'lesson-title')) {
-            handle_lesson_selection(e.target.getAttribute('unit_id'), e.target.getAttribute('lesson_id'))
-         }
+            handle_lesson_selection(e.target.getAttribute('unit_id'), e.target.getAttribute('lesson_id'));
+         } else if (hasClass(e.target, 'zmdi-eye'))
+            var p = e.target.parentElement;
+            handle_lesson_selection(p.getAttribute('unit_id'), p.getAttribute('lesson_id'));
         }, false);
       });
     });
@@ -150,6 +155,33 @@
 	return questions;
     }
 
+    /**
+     * Sets up handlers for modal window.
+     */
+    function setUpModalWindow() {
+      // Bind click on background and on close button to close window
+      $("#question-background, #question-window .question-close-button").on("click", function(e) {
+	closeModal();
+      });
+      $("#question-container > div").hide();
+    }
+
+    function openModal() {
+      // Bind Esc press to close window
+      $(document).on("keyup.modal", function(e) {
+	if (e.keyCode == ESC_KEY) {
+	    closeModal();
+	}
+      });
+      $("#question-window").show();
+    }
+
+    function closeModal() {
+      $("#question-window, #question-container > div").hide();
+      //Remove Esc binding
+      $(document).off("keyup.modal");
+    }
+
     // Creates a n x 3 HTML table where each column consists of the question-icon, the number
     //  of attempts and the student's score.   
 
@@ -168,9 +200,9 @@
         var cell = row.insertCell(i+1);
         var id = attempts_array[i][0];
 
-        // Make a unique class name for each clickable icon
-        var md_class_name = "icon md-" + id + " md-visibility";
-        cell.innerHTML = 'Q' + (i + 1) + "<div class='" + md_class_name + "'></div>";
+        // Make a unique class name for each clickable icon -- icns from material design, see link above
+        var md_class_name = "zmdi zmdi-" + id + " zmdi-eye";
+        cell.innerHTML = "<div style='color:blue'; class='" + md_class_name + "'> Q" + (i+1) + "</div>";
         var els = document.getElementsByClassName(md_class_name);
         els[0].setAttribute('quid', id);
         els[0].onclick = function() {  // Open a modal iframe to display the question
@@ -234,6 +266,7 @@
   <script>
     $(document).ready(function() {
         window.studentEmail = '{{ student_email }}';
+        setUpModalWindow();
      });
   </script>
 {% else %}
