@@ -89,7 +89,9 @@
             handle_lesson_selection(e.target.getAttribute('unit_id'), e.target.getAttribute('lesson_id'));
          } else if (hasClass(e.target, 'zmdi-eye'))
             var p = e.target.parentElement;
-            handle_lesson_selection(p.getAttribute('unit_id'), p.getAttribute('lesson_id'));
+            if (p && p.hasAttribute('lesson_id')) {
+              handle_lesson_selection(p.getAttribute('unit_id'), p.getAttribute('lesson_id'));
+            }
         }, false);
       });
     });
