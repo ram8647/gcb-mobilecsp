@@ -71,6 +71,7 @@ TEMPLATES_DIR = os.path.join(
 # These are the module's templates.  The first is the teacher's splash page.
 TEACHERS_TEMPLATE = os.path.join(TEMPLATES_DIR, 'teacher_dashboard.html')
 STUDENT_ROSTER_TEMPLATE = os.path.join(TEMPLATES_DIR, 'student_roster.html')
+STUDENT_DASHBOARD_TEMPLATE = os.path.join(TEMPLATES_DIR, 'student_dashboard.html')
 
 class TeacherHandlerMixin(object):
     def get_admin_action_url(self, action, key=None):
@@ -192,6 +193,7 @@ class TeacherDashboardHandler(
     DELETE_SECTION_ACTION = 'delete_section'
     ADD_SECTION_ACTION = 'add_section'
     DISPLAY_ROSTER_ACTION = 'display_roster'
+    STUDENT_DASHBOARD_ACTION = 'student_dashboard'
 
     # The links for Teacher functions
     DASHBOARD_LINK_URL = 'teacher'
@@ -200,7 +202,7 @@ class TeacherDashboardHandler(
 
     # Not sure what these do?  May be expendable?
     default_action = 'edit_sections'
-    get_actions = [default_action, LIST_SECTION_ACTION, EDIT_SECTION_ACTION, ADD_SECTION_ACTION, DISPLAY_ROSTER_ACTION]
+    get_actions = [default_action, LIST_SECTION_ACTION, EDIT_SECTION_ACTION, ADD_SECTION_ACTION, DISPLAY_ROSTER_ACTION, STUDENT_DASHBOARD_ACTION]
     post_actions = [DELETE_SECTION_ACTION]
 
     def is_registered_teacher(self, user_email):
@@ -230,6 +232,14 @@ class TeacherDashboardHandler(
         """
         self.template_value['navbar'] = {'teacher': True}
         self.render(STUDENT_ROSTER_TEMPLATE)
+
+    def _render_student_dashboard(self):
+        """ Renders the STUDENT_DASHBOARD_TEMPLATE by calling super.render(template)
+
+            This assumes that the template's values are in template_value.
+        """
+        self.template_value['navbar'] = {'teacher': True}
+        self.render(STUDENT_DASHBOARD_TEMPLATE)
 
     def render_page(self, template):
         """ Renders the template that's supplied as an argument."""
@@ -426,10 +436,27 @@ class TeacherDashboardHandler(
                 scores[unit][lesson]['ratio'] = str(n_correct) + "/" + str(n_questions)
         return scores
 
-    def create_student_data_table(self, course, section, tracker, units):
+    def create_student_table(self, email, course, tracker, units):
+        student_dict = {}
+        student = Student.get_first_by_email(email)[0]  # returns a tuple
+        if student:
+            progress_dict = self.calculate_student_progress_data(student,course,tracker,units)
+            scores = self.retrieve_student_scores_and_attempts(email, course)
+            student_dict['attempts'] = scores['attempts']
+#                    student_dict['scores'] = scores['scores']
+            student_dict['scores'] = self.calculate_performance_ratio(scores['scores'])
+            student_dict['name'] = student.name
+            student_dict['email'] = student.email
+            student_dict['progress_dict'] = progress_dict
+        return student_dict
+
+    def create_student_data_table(self, course, section, tracker, units, student_email = None):
         """ Creates a lookup table containing all student progress data 
             for every unit, lesson, and quiz. 
         """
+        if student_email:
+            return self.create_student_table(student_email, course, tracker, units)
+
         if section.students:
             index = section.students.split(',')   # comma-delimited emails
         else:
@@ -439,17 +466,8 @@ class TeacherDashboardHandler(
         students = []
         if len(index) > 0:
             for email in index:
-                student_dict = {}
-                student = Student.get_first_by_email(email)[0]  # returns a tuple
-                if student:
-                    progress_dict = self.calculate_student_progress_data(student,course,tracker,units)
-                    scores = self.retrieve_student_scores_and_attempts(email, course)
-                    student_dict['attempts'] = scores['attempts']
-#                    student_dict['scores'] = scores['scores']
-                    student_dict['scores'] = self.calculate_performance_ratio(scores['scores'])
-                    student_dict['name'] = student.name
-                    student_dict['email'] = student.email
-                    student_dict['progress_dict'] = progress_dict
+                student_dict = self.create_student_table(email, course, tracker, units)
+                if student_dict:
                     students.append(student_dict)
         return students
 
@@ -492,6 +510,32 @@ class TeacherDashboardHandler(
         self.template_value['students_json'] = transforms.dumps(students, {})  # for use with javascript
        
         self._render_roster()
+
+    def get_student_dashboard(self):
+        """Callback method to display details of the student performance. 
+
+           This is called when the user clicks on the 'View Dashboard' button  
+           from the Section Roster page.  It displays details for all
+           units and lessons.
+        """
+        student_email = self.request.get('student')
+        this_course = self.get_course()
+        tracker = this_course.get_progress_tracker()
+
+        # Get this course's units
+        units = this_course.get_units()
+        units_filtered = filter(lambda x: x.type == 'U', units) #filter out assessments
+
+        self.template_value['student_email'] = student_email
+        self.template_value['units'] = units_filtered
+        self.template_value['lessons'] =  self.get_lessons_for_roster(units_filtered, this_course)
+        student_dict = self.create_student_data_table(this_course, None, tracker, units_filtered, student_email)
+        logging.debug('***RAM*** Student : ' + str(student_dict))
+        self.template_value['student'] = student_dict
+        self.template_value['studentJs'] = transforms.dumps(student_dict, {}) # for use with javascript
+       
+       
+        self._render_student_dashboard()
 
 class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 

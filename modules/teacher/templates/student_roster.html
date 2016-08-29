@@ -109,40 +109,19 @@
         var lesson_id = sel.options[sel.selectedIndex].value;
         update_section_stats(this.value, lesson_id);
 
-
-         //defined in popup.js
-//         RebuildCompletionColumn(window.students, this, $('.lesson-select'));
-
-         if ($($('.lesson-select')).val() !== 'NA') {
-//           var lessonScores = retrieveLessonScores(window.scores, $(this).val(), $($('.lesson-select')).val());
-//           var activityTable = new ActivityTable(lessonScores);
-//           activityTable.buildTable($(this).val(), $($('.lesson-select')).val(),
-//             $($('.unit-select option:selected')).text(),
-//             $($('.lesson-select option:selected')).text()).appendTo('#questions-container');
-         }
       });
     });
+
     $(function() {
       $('.lesson-select').change(function() {
-        //defined in popup.js
-//        RebuildCompletionColumn(window.students, $('.unit-select'), this);
-
         $('#questions-container').empty();
         if ($(this).val() !== 'NA') {
           var sel = document.getElementById('unit-select-widget');
           var unit_id = sel.options[sel.selectedIndex].value;
           update_section_stats(unit_id, this.value);
-//          var lessonScores = retrieveLessonScores(window.scores, $($('.unit-select')).val(), $(this).val());
-//          var activityTable = new ActivityTable(lessonScores);
-//          activityTable.buildTable($($('.unit-select')).val(), $(this).val(), $($('.unit-select')).text(),
-//            $($('.lesson-select option:selected')).text()).appendTo('#questions-container');
         }
       });
     });
-
-    function rebuildLessonSelect(unitId) {
-      var options = {};
-    }
   </script>
 {% endblock %}
 
@@ -151,16 +130,19 @@
 
 {% block main_content %}
 {{ main_content }}
+
 {% if lessons %}
   <script>
   var lessonsJson = '{{ lessons|safe }}';
   var lessonsObject = jQuery.parseJSON(lessonsJson);
+  window.lessonsObject = lessonsObject;
   </script>
 {% endif %}
 {% if students %}
   <script>
   var studentsArray = '{{ students_json | safe  }}'; 
-  var studentsJs = jQuery.parseJSON(studentsArray)
+  var studentsJs = jQuery.parseJSON(studentsArray);
+  window.studentsJs = studentsJs;
   </script>
 {% endif %}
 
@@ -210,7 +192,7 @@
           </td>
           <td>
            <span class="hover help yui-wk-div" data-id="lessonselect"><label style="margin-left: 10px;"><b>Lessons: </b></label></span>
-           <select id="lesson-select-widget" class="lesson-select" style="min-width: 200px;">
+            <select id="lesson-select-widget" class="lesson-select" style="min-width: 200px;">
               <option value="N/A">N/A</option>
            </select>
           </td>
@@ -236,12 +218,15 @@
           {% for student in students %}
             <tr>
              <td>
-                <form id='view-dashboard-button-{{loop.index}}' action='edit_sections?action=add_section'  method='GET'>
-                  <input type="hidden" name="action" value="add_section">
-                  <span class="hover help yui-wk-div" data-id="dashboard">
-                    <button class="gcb-button" type="submit">View Dashboard</button>
-                  </span>
-              </form>
+              <a href="teacher?action=student_dashboard&student={{ student.email }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">
+                 <button class="gcb-button" type="submit">View Dashboard</button>
+              </a>
+<!--                 <form id='view-dashboard-button-{{loop.index}}' action='edit_sections?action=add_section'  method='GET'> -->
+<!--                   <input type="hidden" name="action" value="add_section"> -->
+<!--                   <span class="hover help yui-wk-div" data-id="dashboard"> -->
+<!--                     <button class="gcb-button" type="submit">View Dashboard</button> -->
+<!--                   </span> -->
+<!--               </form> -->
                </td>
              <td id="student-name-cell-{{loop.index}}">
                {{ student.name }}
