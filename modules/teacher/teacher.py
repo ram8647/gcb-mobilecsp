@@ -141,6 +141,12 @@ class TeacherHandlerMixin(object):
         if sections:
             for section in sections:
                 section = transforms.entity_to_dict(section)
+                date = section.get('date')
+                if date:
+                    date = datetime.datetime.combine(
+                        date, datetime.time(0, 0, 0, 0))
+                    section['date'] = (
+                        date - datetime.datetime(1970, 1, 1)).total_seconds() * 1000
 
                 logging.debug('***RAM*** format template section = ' + str(section))
 

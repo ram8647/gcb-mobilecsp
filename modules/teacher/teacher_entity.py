@@ -118,7 +118,6 @@ class TeacherRights(object):
     @classmethod
     def can_edit_section(cls, handler):
         return True
-#        return roles.Roles.is_teacher(handler.app_context)
 
     @classmethod
     def can_delete_section(cls, handler):
@@ -161,13 +160,6 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         schema.add_property(schema_fields.SchemaField(
             'school', 'School', 'string',
             description=messages.TEACHER_SCHOOL_DESCRIPTION))
-#         schema.add_property(schema_fields.SchemaField(
-#             'date', 'Date', 'datetime',
-#             description=messages.TEACHER_DATE_DESCRIPTION,
-#             extra_schema_dict_values={
-#                 '_type': 'datetime',
-#                 'className': 'inputEx-CombineField gcb-datetime '
-#                 'inputEx-fieldWrapper date-only inputEx-required'}))
         resources_display.LabelGroupsHelper.add_labels_schema_fields(
             schema, 'teacher')
         return schema
@@ -239,9 +231,6 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         payload = request.get('payload')
         update_dict = transforms.json_to_dict(
             transforms.loads(payload), schema.get_json_schema_dict())
-
-#         # The datetime widget returns a datetime object and we need a UTC date.
-#         update_dict['date'] = update_dict['date'].date()
 
         entity.labels = common_utils.list_to_text(
             resources_display.LabelGroupsHelper.field_data_to_labels(

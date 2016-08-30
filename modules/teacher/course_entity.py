@@ -95,9 +95,6 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
                 'className': 'inputEx-Group new-form-layout'})
         schema.add_property(schema_fields.SchemaField(
             'key', 'ID', 'string', editable=False, hidden=True))
-#         schema.add_property(schema_fields.SchemaField(
-#             'date', 'Date', 'datetime', editable=False, hidden=True,
-#             description=messages.SECTION_DATE_DESCRIPTION))
         schema.add_property(schema_fields.SchemaField(
             'name', 'Name', 'string',
             description=messages.SECTION_NAME_DESCRIPTION))
@@ -149,8 +146,7 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         # Format the internal date object as ISO 8601 datetime, with time
         # defaulting to 00:00:00
         date = entity_dict['date']
-        if date:
-            date = datetime.datetime(date.year, date.month, date.day)
+        date = datetime.datetime(date.year, date.month, date.day)
         entity_dict['date'] = date
 
         entity_dict.update(
@@ -194,10 +190,7 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         update_dict = transforms.json_to_dict(
             transforms.loads(payload), schema.get_json_schema_dict())
 
-#         # The datetime widget returns a datetime object and we need a UTC date.
-#         update_dict['date'] = update_dict['date'].date()
         update_dict['students'] = ''.join(update_dict['students'].split())  # Remove whitespace
-
 
         entity.labels = common_utils.list_to_text(
             resources_display.LabelGroupsHelper.field_data_to_labels(
@@ -207,9 +200,6 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         transforms.dict_to_entity(entity, update_dict)
 
         logging.debug('***RAM*** entity = ' + str(entity))
-
-#         if not entity.date:
-#             entity.date = datetime.datetime.now().date()
 
         entity.put()
 
