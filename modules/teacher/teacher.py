@@ -65,13 +65,13 @@ MODULE_TITLE = 'Teacher Dashboard'
 
 #Setup paths and directories for templates and resources
 RESOURCES_PATH = '/modules/teacher/resources'
-TEMPLATES_DIR = os.path.join(
+TEMPLATE_DIR = os.path.join(
     appengine_config.BUNDLE_ROOT, 'modules', MODULE_NAME, 'templates')
 
 # These are the module's templates.  The first is the teacher's splash page.
-TEACHERS_TEMPLATE = os.path.join(TEMPLATES_DIR, 'teacher_dashboard.html')
-STUDENT_ROSTER_TEMPLATE = os.path.join(TEMPLATES_DIR, 'student_roster.html')
-STUDENT_DASHBOARD_TEMPLATE = os.path.join(TEMPLATES_DIR, 'student_dashboard.html')
+TEACHERS_TEMPLATE = os.path.join(TEMPLATE_DIR, 'teacher_dashboard.html')
+STUDENT_ROSTER_TEMPLATE = os.path.join(TEMPLATE_DIR, 'student_roster.html')
+STUDENT_DASHBOARD_TEMPLATE = os.path.join(TEMPLATE_DIR, 'student_dashboard.html')
 
 class TeacherHandlerMixin(object):
     def get_admin_action_url(self, action, key=None):
@@ -600,7 +600,7 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 
         logging.debug('***RAM**  Trace: get_edit_teachers')
         main_content = self.get_template(
-            'mcsp_admin_dashboard.html', [TEMPLATES_DIR]).render({
+            'mcsp_admin_dashboard.html', [TEMPLATE_DIR]).render({
                 'teachers': self.format_admin_template(items),
             })
 
