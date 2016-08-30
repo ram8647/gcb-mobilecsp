@@ -110,16 +110,16 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     else:
                         self.num_attempts_dict[student.email][answer.question_id] += 1
                     question_answer_dict = {}
-                    question_answer_dict['unit_id'] = answer.unit_id
-                    question_answer_dict['lesson_id'] = answer.lesson_id
+#                    question_answer_dict['unit_id'] = answer.unit_id
+#                    question_answer_dict['lesson_id'] = answer.lesson_id
                     question_answer_dict['sequence'] = answer.sequence
                     question_answer_dict['question_id'] = answer.question_id
                     question_answer_dict['question_type'] = answer.question_type
-                    question_answer_dict['timestamp'] = answer.timestamp
+#                    question_answer_dict['timestamp'] = answer.timestamp
                     question_answer_dict['answers'] = answer.answers
                     question_answer_dict['score'] = answer.score
                     question_answer_dict['weighted_score'] = answer.weighted_score
-                    question_answer_dict['tallied'] = answer.tallied
+#                    question_answer_dict['tallied'] = answer.tallied
 
                     if answer.sequence in lesson_answers and lesson_answers[answer.sequence] < timestamp:
                         lesson_answers[answer.sequence] = question_answer_dict
@@ -168,16 +168,16 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
         if not question_answer:
             question_answer_dict = {}
-            question_answer_dict['unit_id'] = unit_id
-            question_answer_dict['lesson_id'] = lesson_id
+#            question_answer_dict['unit_id'] = unit_id
+#            question_answer_dict['lesson_id'] = lesson_id
             question_answer_dict['sequence'] = sequence
             question_answer_dict['question_id'] = question['id']
             question_answer_dict['question_type'] = 'NotCompleted'
-            question_answer_dict['timestamp'] = 0
+#            question_answer_dict['timestamp'] = 0
             question_answer_dict['answers'] = ''
             question_answer_dict['score'] = 0
             question_answer_dict['weighted_score'] = 0
-            question_answer_dict['tallied'] = False
+#            question_answer_dict['tallied'] = False
             question_answer_dict['possible_points'] = possible_score
 #            question_answer_dict['choices'] = choices
 
@@ -186,16 +186,16 @@ class ActivityScoreParser(jobs.MapReduceJob):
             lesson[sequence] = question_answer_dict
         else:
             question_answer_dict = {}
-            question_answer_dict['unit_id'] = question_answer['unit_id']
-            question_answer_dict['lesson_id'] = question_answer['lesson_id']
+#            question_answer_dict['unit_id'] = question_answer['unit_id']
+#            question_answer_dict['lesson_id'] = question_answer['lesson_id']
             question_answer_dict['sequence'] = question_answer['sequence']
             question_answer_dict['question_id'] = question_answer['question_id']
             question_answer_dict['question_type'] = question_answer['question_type']
-            question_answer_dict['timestamp'] = question_answer['timestamp']
+#            question_answer_dict['timestamp'] = question_answer['timestamp']
             question_answer_dict['answers'] = question_answer['answers']
             question_answer_dict['score'] = question_answer['score']
             question_answer_dict['weighted_score'] = question_answer['weighted_score']
-            question_answer_dict['tallied'] = question_answer['tallied']
+#            question_answer_dict['tallied'] = question_answer['tallied']
             question_answer_dict['possible_points'] = possible_score
 #            question_answer_dict['choices'] = choices
 
