@@ -251,7 +251,7 @@
       }
 
       var score_ratio = 'N/A';
-      if (studentJs['scores'][unit_id][lesson_id]) 
+      if (studentJs['scores'][unit_id] && studentJs['scores'][unit_id][lesson_id]) 
           score_ratio = studentJs['scores'][unit_id][lesson_id]['ratio'];
       var el = document.getElementById('lesson-completion-' + lesson_id);
       el.innerHTML = 'Score: ' + score_ratio;
