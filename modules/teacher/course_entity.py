@@ -95,15 +95,15 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
                 'className': 'inputEx-Group new-form-layout'})
         schema.add_property(schema_fields.SchemaField(
             'key', 'ID', 'string', editable=False, hidden=True))
-        schema.add_property(schema_fields.SchemaField(
-            'date', 'Date', 'datetime', editable=False, hidden=True,
-            description=messages.SECTION_DATE_DESCRIPTION))
+#         schema.add_property(schema_fields.SchemaField(
+#             'date', 'Date', 'datetime', editable=False, hidden=True,
+#             description=messages.SECTION_DATE_DESCRIPTION))
         schema.add_property(schema_fields.SchemaField(
             'name', 'Name', 'string',
             description=messages.SECTION_NAME_DESCRIPTION))
         schema.add_property(schema_fields.SchemaField(
             'description', 'Description', 'string',
-            description=messages.SECTION_NAME_DESCRIPTION))
+            description=messages.SECTION_BLURB_DESCRIPTION))
         schema.add_property(schema_fields.SchemaField(
             'students', 'Student Emails', 'text',
             description=messages.SECTION_STUDENTS_DESCRIPTION,
@@ -132,13 +132,13 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
         if not entity:
             transforms.send_json_response(
-                self, 404, 'Course Section not found.', {'key': key})
+                self, 404, 'MobileCSP: Course Section not found.', {'key': key})
             return
 
         viewable = TeacherRights.apply_rights(self, [entity])
         if not viewable:
             transforms.send_json_response(
-                self, 401, 'Access denied.', {'key': key})
+                self, 401, 'MobileCSP: Access denied.', {'key': key})
             return
         entity = viewable[0]
 
@@ -168,22 +168,24 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         """Handles REST PUT verb with JSON payload."""
  
         request = transforms.loads(self.request.get('request'))
-        logging.debug('***RAM*** put (saving) ' + str(request))
         key = request.get('key')
 
-#         if not self.assert_xsrf_token_or_fail(
-#                 request, 'section-put', {'key': key}):
-#             return
+        if not self.assert_xsrf_token_or_fail(
+                request, 'section-put', {'key': key}):
+            logging.warning('***RAM*** put FAIL (saving) ' + str(request))
+            return
 
-        if not TeacherRights.can_edit(self):
+#        logging.warning('***RAM*** put (saving) ' + str(request))
+
+        if not TeacherRights.can_edit_section(self):
             transforms.send_json_response(
-                self, 401, 'Access denied.', {'key': key})
+                self, 401, 'MobileCSP: Access denied.', {'key': key})
             return
 
         entity = CourseSectionEntity.get(key)
         if not entity:
             transforms.send_json_response(
-                self, 404, 'Course Section not found.', {'key': key})
+                self, 404, 'MobileCSP: Course Section not found.', {'key': key})
             return
 
         schema = SectionItemRESTHandler.SCHEMA()
@@ -192,9 +194,10 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         update_dict = transforms.json_to_dict(
             transforms.loads(payload), schema.get_json_schema_dict())
 
-        # The datetime widget returns a datetime object and we need a UTC date.
-        update_dict['date'] = update_dict['date'].date()
+#         # The datetime widget returns a datetime object and we need a UTC date.
+#         update_dict['date'] = update_dict['date'].date()
         update_dict['students'] = ''.join(update_dict['students'].split())  # Remove whitespace
+
 
         entity.labels = common_utils.list_to_text(
             resources_display.LabelGroupsHelper.field_data_to_labels(
@@ -205,8 +208,9 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
         logging.debug('***RAM*** entity = ' + str(entity))
 
-        if not entity.date:
-            entity.date = datetime.datetime.now().date()
+#         if not entity.date:
+#             entity.date = datetime.datetime.now().date()
+
         entity.put()
 
         transforms.send_json_response(self, 200, 'Saved Section.')
@@ -219,14 +223,14 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
                 self.request, 'section-delete', {'key': key}):
             return
 
-        if not TeacherRights.can_delete(self):
+        if not TeacherRights.can_delete_section(self):
             self.error(401)
             return
 
         entity = CourseSectionEntity.get(key)
         if not entity:
             transforms.send_json_response(
-                self, 404, 'Course Section not found.', {'key': key})
+                self, 404, 'MobileCSP: Course Section not found.', {'key': key})
             return
 
         entity.delete()

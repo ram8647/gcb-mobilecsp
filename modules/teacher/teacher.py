@@ -107,7 +107,7 @@ class TeacherHandlerMixin(object):
                     date - datetime.datetime(1970, 1, 1)).total_seconds() * 1000
 
             # add 'edit' actions
-            if TeacherRights.can_edit(self):
+            if TeacherRights.can_edit_section(self):
                 item['edit_action'] = self.get_admin_action_url(
                      AdminDashboardHandler.ADMIN_EDIT_ACTION, key=item['key'])
                 item['delete_xsrf_token'] = self.create_xsrf_token(
@@ -146,7 +146,7 @@ class TeacherHandlerMixin(object):
 
                 # Add 'edit' and 'delete' actions to each section that will be displayed
 
-                if section['teacher_email'] == user_email and TeacherRights.can_edit(self):
+                if section['teacher_email'] == user_email and TeacherRights.can_edit_section(self):
                     section['edit_action'] = self.get_dashboard_action_url(
                         TeacherDashboardHandler.EDIT_SECTION_ACTION, key=section['key'])
 
@@ -426,6 +426,8 @@ class TeacherDashboardHandler(
         return scores
 
     def calculate_performance_ratio(self, aggregate_scores, email): 
+        if email not in aggregate_scores.keys():
+            return aggregate_scores         
         scores = aggregate_scores[email]
         for unit in scores:
             for lesson in scores[unit]:

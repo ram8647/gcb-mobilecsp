@@ -183,13 +183,13 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
 
         if not entity:
             transforms.send_json_response(
-                self, 404, 'Teacher Entity not found.', {'key': key})
+                self, 404, 'MobileCSP: Teacher Entity not found.', {'key': key})
             return
 
         viewable = TeacherRights.apply_rights(self, [entity])
         if not viewable:
             transforms.send_json_response(
-                self, 401, 'Access denied.', {'key': key})
+                self, 401, 'MobileCSP: Admin access denied.', {'key': key})
             return
         entity = viewable[0]
 
@@ -225,13 +225,13 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
 
         if not TeacherRights.can_edit(self):
             transforms.send_json_response(
-                self, 401, 'Access denied.', {'key': key})
+                self, 401, 'MobileCSP: Admin access denied.', {'key': key})
             return
 
         entity = TeacherEntity.get(key)
         if not entity:
             transforms.send_json_response(
-                self, 404, 'Object not found.', {'key': key})
+                self, 404, 'MobileCSP: Teacher Entity not found.', {'key': key})
             return
 
         schema = TeacherItemRESTHandler.SCHEMA()
@@ -269,7 +269,7 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         entity = TeacherEntity.get(key)
         if not entity:
             transforms.send_json_response(
-                self, 404, 'Object not found.', {'key': key})
+                self, 404, 'MobileCSP: Teacher Entity not found.', {'key': key})
             return
 
         entity.delete()
