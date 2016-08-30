@@ -27,8 +27,11 @@
 
     $(function() {
       // Handles updating the lesson select options and completion values
+      // Invoked when the user selects a Unit
       $('.unit-select').change(function() {
         $('#questions-container').empty();
+
+        // Update the student table with data for the selected unit
         var newOptions = [];
         if (this.value == 'course_completion') {
           document.getElementById('student-unit-completion').innerHTML = '<b>Unit Completion: </b>' + 'N/A';
@@ -47,7 +50,7 @@
           }
         }
 
-        // Display the lessons in a table with clickable lesson titles
+        // Display the unit's lessons in a table with clickable lesson titles
         var lessons = lessonsObject[this.value];
         var el = document.getElementById('lessons-container');
         var table = document.getElementById('lessons-table');
@@ -82,7 +85,7 @@
            cell.innerHTML = "<table id=question-attempts-" + lid + " class='question-attempts'> </table>";
         }
 
-        // Add handlers to the titles -- hasClass is defined above
+        // Add click handlers to the titles -- hasClass is defined above
         // The else clause handles a <span> inside a <div> that contains unit_id and lesson_id
         document.addEventListener('click', function (e) {
           if (hasClass(e.target, 'lesson-title')) {
@@ -129,7 +132,7 @@
 {% if student_email  %}
   <script>
     /**
-     * Sets up handlers for modal window that displays the quiz questions.
+     * Sets up handlers for the modal window that displays the quiz questions.
      *
      * How this works: Quiz previews are displayed using the GCB dashboard module.  
      * They use the template:  modules/dashboard/templates/question_preview.html and
@@ -166,6 +169,14 @@
   </script>
 
   <script>
+    /*
+     * Creates an array of [question_id, attempts, score] for each
+     *  question in the questions array.
+     *
+     * @param questions a dict of questions for this lesson
+     * @param attempts an array of the number of student attempts at a question
+     * @return An array of the form [id, attempts, score] for each question.
+     */
     function createQuestionsAttemptsArray(questions, attempts) {
         var question_attempts = [];
         for (var key in questions) {
@@ -183,6 +194,15 @@
     }
 
 
+    /*
+     * Retrieves the student's scores for the questions on a particular lesson.
+     *
+     * @param studentId the student's email
+     * @param unitId the unit number
+     * @param lessonId the lesson  number
+     * @param scores a dict containing the student's score data
+     * @return a array of the student's scores for the questions in given lessons
+     */
     function getQuestionScoresForStudentByLesson(studentId, unitId, lessonId, scores) {
 	var questions = [];
 	if (scores) {
@@ -195,16 +215,22 @@
 	return questions;
     }
 
-    // Creates a n x 3 HTML table where each column consists of the question-icon, the number
-    //  of attempts and the student's score.   
-
+    /*
+     * Creates a n x 3 HTML table for a given lesson of n questions 
+     *  where each column consists of the question-id, the number
+     *  of attempts and the student's score.   
+     *
+     * @param lesson_id the lesson's id number
+     * @param attempts_array an array of the form [quid, attempts, score]
+     * @return an HTML table displaying the students attempts and scores
+     */
     function get_attempts_table(lesson_id, attempts_array) {
       // Get and clear the table
       var table = document.getElementById('question-attempts-' + lesson_id);
       while (table.firstChild) {
         table.removeChild(table.firstChild);
       }
-      // Row 0 is for the question and the icon
+      // Row 0 is for the question id and a clickable icon that will open the modal window
       var row = table.insertRow(0);
       var cell = row.insertCell(0);
       cell.innerHTML = "Questions";
@@ -250,7 +276,13 @@
    } // def
   </script>
   <script>
-    // Displays a table of score quiz attempts and scores
+
+    /* 
+     * Handler for lesson selector. Displays a table of score quiz attempts and scores
+     * 
+     * @param unit_id the id number of the unit
+     * @param lesson_id the id number of the lesson
+     */
     function handle_lesson_selection(unit_id, lesson_id) {
 
       // Remove existing tables 
@@ -261,6 +293,7 @@
         }
       }
 
+      // Build and display the questions for the given lesson.
       var score_ratio = 'N/A';
       if (studentJs['scores'][unit_id] && studentJs['scores'][unit_id][lesson_id]) 
           score_ratio = studentJs['scores'][unit_id][lesson_id]['ratio'];
