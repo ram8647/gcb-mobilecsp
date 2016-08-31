@@ -19,6 +19,7 @@
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/student_progress.css" />
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/question_preview.css" /> 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
+  <script type="text/javascript" src="assets/lib/lessons/modal-window.js"></script>
 
   <script>
      function hasClass(elem, className) {
@@ -131,44 +132,6 @@
 
 {% if student_email  %}
   <script>
-    /**
-     * Sets up handlers for the modal window that displays the quiz questions.
-     *
-     * How this works: Quiz previews are displayed using the GCB dashboard module.  
-     * They use the template:  modules/dashboard/templates/question_preview.html and
-     *  and require the style sheet:  assets/lib/lessons/question_preview.css.
-     *  They script in question_preview requires that the iframe containing the
-     *  preview be contained in a window named modal-window.  See the HTML code
-     *  at the very bottom of this file.
-     */
-    var ESC_KEY = 27;
-
-    function setUpModalWindow() {
-      // Bind click on background and on close button to close window
-      $("#question-background, #modal-window .question-close-button").on("click", function(e) {
-	closeModal();
-      });
-      $("#question-container > div").hide();
-    }
-
-    function openModal() {
-      // Bind Esc press to close window
-      $(document).on("keyup.modal", function(e) {
-	if (e.keyCode == ESC_KEY) {
-	    closeModal();
-	}
-      });
-      $("#modal-window").show();
-    }
-
-    function closeModal() {
-      $("#modal-window, #question-container > div").hide();
-      //Remove Esc binding
-      $(document).off("keyup.modal");
-    }
-  </script>
-
-  <script>
     /*
      * Creates an array of [question_id, attempts, score] for each
      *  question in the questions array.
@@ -224,7 +187,7 @@
      * @param attempts_array an array of the form [quid, attempts, score]
      * @return an HTML table displaying the students attempts and scores
      */
-    function get_attempts_table(lesson_id, attempts_array) {
+    function get_attempts_table(unit_id, lesson_id, attempts_array) {
       // Get and clear the table
       var table = document.getElementById('question-attempts-' + lesson_id);
       while (table.firstChild) {
@@ -241,18 +204,22 @@
 
         // Make a unique class name for each clickable icon -- icns from material design, see link above
         var md_class_name = "zmdi zmdi-" + id + " zmdi-eye";
-        cell.innerHTML = "<div style='color:blue'; class='" + md_class_name + "'> Q" + (i+1) + "</div>";
-        var els = document.getElementsByClassName(md_class_name);
-        els[0].setAttribute('quid', id);
-        els[0].onclick = function() {  // Open a modal iframe to display the question
-          openModal();
-          var params = {
-             action: 'question_preview',
-             quid: this.getAttribute('quid')
-          };
-          $('#question-preview').html($('<iframe />').attr(
-             {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show();
-        };
+//        cell.innerHTML = "<div style='color:blue'; class='" + md_class_name + "'> Q" + (i+1) + "</div>";
+        cell.innerHTML = "<div style='color:blue;' >"  +
+             "<a target='_blank' class='" + md_class_name + 
+             "' href=https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=" + unit_id + "&lesson=" + lesson_id + "> Q" + (i+1) + "</a></div>";
+
+<!--         var els = document.getElementsByClassName(md_class_name); -->
+<!--         els[0].setAttribute('quid', id); -->
+<!--         els[0].onclick = function() {  // Open a modal iframe to display the question -->
+<!--           openModal(); -->
+<!--           var params = { -->
+<!--              action: 'question_preview', -->
+<!--              quid: this.getAttribute('quid') -->
+<!--           }; -->
+<!--           $('#question-preview').html($('<iframe />').attr( -->
+<!--              {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show(); -->
+<!--         }; -->
       }
 
       // Row 1 is for the number of attempts
@@ -304,14 +271,13 @@
        var questions = getQuestionScoresForStudentByLesson(student_email, unit_id, lesson_id, studentJs['scores']);
        var attempts_array  = createQuestionsAttemptsArray(questions, studentJs['attempts'][student_email]);
        if (attempts_array.length > 0) {
-         get_attempts_table(lesson_id, attempts_array);
+         get_attempts_table(unit_id, lesson_id, attempts_array);
        }
     }
   </script>
 
   <script>
     $(document).ready(function() {
-        window.studentEmail = '{{ student_email }}';
         setUpModalWindow();
      });
   </script>
@@ -376,11 +342,11 @@
               {% endif %} 
           </td>
       </tr>
-        <div id="lessons-container">
-          <table id="lessons-table"></table>
-        </div>
     </table>
 
+    <div id="lessons-container">
+      <table id="lessons-table"></table>
+    </div>
 
     <div id="modal-window" style="display: none;">
       <div id="question-background"></div>
