@@ -517,7 +517,7 @@ class TeacherDashboardHandler(
         self.template_value['lessons'] = lessons 
         self.template_value['students'] = students
         self.template_value['students_json'] = transforms.dumps(students, {})  # for use with javascript
-       
+
         self._render_roster()
 
     def get_student_dashboard(self):

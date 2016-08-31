@@ -37,6 +37,12 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
     @classmethod
     def _get_questions_by_question_id(cls, questions_by_usage_id):
+        ''' Retrieves every question in the course returning 
+            them in a dict:  { id:questionDAO, ... }
+
+            @param questions_by_usage_id.values() is a dict:
+             {unit, lesson, sequence, weight, quid}
+        '''
         ret = {}
         ret['single'] = {}
         ret['grouped'] = {}
@@ -98,7 +104,10 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 unit_answers = student_answers.get(question_info['unit'], {})
                 lesson_answers = unit_answers.get(question_info['lesson'], {})
 
-
+                question_desc = None
+#                 if question_info:
+#                     question_desc = question_info.dict['description']
+                             
                 for answer in answers:
                     # Counts the number of attempts for each answer by student
 #                    logging.debug('***RAM*** answer.question.id = ' + str(answer.question_id) + ' type= ' + str(answer.question_type) + ' s= ' + student.email)
@@ -114,6 +123,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
 #                    question_answer_dict['lesson_id'] = answer.lesson_id
                     question_answer_dict['sequence'] = answer.sequence
                     question_answer_dict['question_id'] = answer.question_id
+                    question_answer_dict['question_desc'] = question_desc
                     question_answer_dict['question_type'] = answer.question_type
 #                    question_answer_dict['timestamp'] = answer.timestamp
                     question_answer_dict['answers'] = answer.answers
@@ -135,7 +145,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 self.activity_scores = { }
 #                logging.debug('***RAM*** num_attempts_dict ' + str(self.num_attempts_dict))
 
-        logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
+#        logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
         return self.activity_scores
 
     def build_missing_score(self, question, question_info, student_id, unit_id, lesson_id, sequence=-1):
@@ -147,6 +157,10 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 self.activity_scores[student_id][unit_id]:
             question_answer = next((x for x in self.activity_scores[student_id][unit_id][lesson_id].values()
                                     if x['sequence'] == sequence), None)
+
+        question_desc = None
+        if question_info:
+            question_desc = question_info.dict['description']
 
         possible_score = 0
         choices = None
@@ -172,6 +186,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
 #            question_answer_dict['lesson_id'] = lesson_id
             question_answer_dict['sequence'] = sequence
             question_answer_dict['question_id'] = question['id']
+            question_answer_dict['description'] = question_desc
             question_answer_dict['question_type'] = 'NotCompleted'
 #            question_answer_dict['timestamp'] = 0
             question_answer_dict['answers'] = ''
@@ -190,6 +205,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
 #            question_answer_dict['lesson_id'] = question_answer['lesson_id']
             question_answer_dict['sequence'] = question_answer['sequence']
             question_answer_dict['question_id'] = question_answer['question_id']
+            question_answer_dict['description'] = question_desc
             question_answer_dict['question_type'] = question_answer['question_type']
 #            question_answer_dict['timestamp'] = question_answer['timestamp']
             question_answer_dict['answers'] = question_answer['answers']
