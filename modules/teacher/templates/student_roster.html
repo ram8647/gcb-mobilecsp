@@ -17,7 +17,11 @@
   {{ super() }}
   <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/tipped.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
+  <link rel="stylesheet" type="text/css" href="assets/lib/lessons/question_preview.css" /> 
+  <script type="text/javascript" src="assets/lib/lessons/modal-window.js"></script>
   <script src="assets/lib/lessons/tipped.js"></script>
+
 <!--  BUG?  Why can't I load these from resources directory. 404 error ??????  -->
 <!--   <link rel="stylesheet" type="text/css" href="{{resources_path}}/css/tipped.css" /> -->
 <!--   <script src="{{resources_path}}/js/tipped.js"></script> -->
@@ -43,7 +47,20 @@
       "lessonselect": "After choosing a unit option choose an option here to see student performance for a particular lesson.",
     };
   </script>
+  <script>
+    $(document).ready(function() {
+        setUpModalWindow();
+     });
+  </script>
   <script type="text/javascript">
+    /*
+     *  Retrieve the quiz performance ratio for a given unit and lesson.
+     *
+     *  @param student reference to the student's data dict
+     *  @param unit the unit's id
+     *  @param lesson the lesson's id
+     *  @return a ratio of the form '# correct / # quizzes'
+     */
     function get_quiz_ratio(student, unit, lesson) {
       var ratio = "N/A";
       if (student['scores'][unit]) {
@@ -54,7 +71,14 @@
       return ratio;
     }
 
-    // Performs a lookup in the studentsJs table for each student
+    /*
+     * Fills in student performance and progress data for a given unit and lesson 
+     *  by performing lookups in the studentJs data table.
+     *
+     *  @param unit_id the unit number
+     *  @param lesson_id the lesson number
+     *
+     */
     function update_section_stats(unit_id, lesson_id) {
       for (var i=0; i < studentsJs.length; i++) {
          var student = studentsJs[i];
@@ -76,10 +100,13 @@
       }
     }
 
+    /*
+     * Handles clicks on the unit selection widget, updating the student's completion values
+     *   for the selected unit and filling in the lesson selection widget.
+     */
     $(function() {
-      // Handles updating the lesson select options and completion values
       $('.unit-select').change(function() {
-        $('#questions-container').empty();
+//        $('#questions-container').empty();
         var newOptions = [];
         if (this.value != 'course_completion') {
           document.getElementById('course-unit-progress-heading').innerHTML = 'Unit Progress %';
@@ -112,16 +139,133 @@
       });
     });
 
+    /*
+     * Handles clicks on the lesson selection widget, updating the lesson's stats.
+     */
     $(function() {
       $('.lesson-select').change(function() {
-        $('#questions-container').empty();
+//        $('#questions-container').empty();
         if ($(this).val() !== 'NA') {
           var sel = document.getElementById('unit-select-widget');
           var unit_id = sel.options[sel.selectedIndex].value;
           update_section_stats(unit_id, this.value);
+          get_questions_table(unit_id, this.value);
         }
       });
     });
+
+    function calc_number_of_answer_columns(unit_id, lesson_id) {
+      var maxlen = 0;
+      var scores_obj;
+      for (var i = 0; i < studentsJs.length; i++) {
+        var scores = studentsJs[i]['scores'];
+        if (scores[unit_id] && scores[unit_id][lesson_id]) {
+          scores = studentsJs[i].scores[unit_id][lesson_id];
+          var len = Object.keys(scores).length;
+          if (len  > maxlen) 
+            maxlen = len;
+            scores_obj = scores;
+        }
+      }
+      return [scores_obj, maxlen - 1];  // One of the keys is 'ratio', not an answer choice
+    }
+
+    // Creates a table of all the questions in a given lesson.
+    // With a break down by answers given by students
+    function get_questions_table(unit_id, lesson_id) {
+      // Get and clear the table
+      var table = document.getElementById('questions-table');
+      while (table.firstChild) {
+        table.removeChild(table.firstChild);
+      }
+
+//      var num_columns = calc_number_of_answer_columns(unit_id, lesson_id);
+      var result = calc_number_of_answer_columns(unit_id, lesson_id);
+      var scores_obj = result[0];
+      var num_columns = result[1];
+      if (num_columns <= 0) 
+        return;
+
+      // Row 0 is for the headings
+      var row = table.insertRow(0);
+      row.insertCell(0).innerHTML = '<b>Questions</b>';
+
+//      alert('num cols = ' + num_columns);
+      for (var i = 0; i < num_columns; i++) {
+        row.insertCell(i+1).innerHTML = 'Ans ' + (i+1);
+      }
+      var j = 1;  // Table row index
+      for (var i in scores_obj) {
+        if (i != 'ratio') {
+          var id = scores_obj[i]['question_id'];
+//          table.insertRow(j++).insertCell(0).innerHTML = "<div style=color:blue; quid='" + id + "' class='zmdi zmdi-eye'> Q" + id + "</div>";
+
+          table.insertRow(j++).insertCell(0).innerHTML = "<div style='color:blue;' >"  +
+             "<a target='_blank' class=zmdi zmdi eye'" + 
+             " href=https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=" + unit_id + "&lesson=" + lesson_id + "> Q " + id + "</a></div>";
+        }
+      }
+
+      // Create handlers for each question
+<!--       var els = document.getElementsByClassName("zmdi zmdi-eye"); -->
+<!--       for (var i = 0; i < els.length; i++) { -->
+<!--         els[i].onclick = function() {  // Opens a modal iframe to display the question, code in modal-window.js -->
+<!--           openModal(); -->
+<!--           var params = { -->
+<!--              action: 'question_preview', -->
+<!--              quid: this.getAttribute('quid') -->
+<!--           }; -->
+<!--           $('#question-preview').html($('<iframe />').attr( -->
+<!--              {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show(); -->
+<!--         }; -->
+<!--       } // for -->
+
+<!--       var cell = row.insertCell(0); -->
+<!--       row.insertCell(0).innerHTML = <b>Student</b> -->
+
+<!--       cell.innerHTML = "Questions"; -->
+
+<!--       for (var i= 0; i < attempts_array.length; i++) {  // Queston Ids -->
+<!--         var cell = row.insertCell(i+1); -->
+<!--         var id = attempts_array[i][0]; -->
+
+<!--         // Make a unique class name for each clickable icon -- icns from material design, see link above -->
+<!--         var md_class_name = "zmdi zmdi-" + id + " zmdi-eye"; -->
+<!--         cell.innerHTML = "<div style='color:blue'; class='" + md_class_name + "'> Q" + (i+1) + "</div>"; -->
+<!--         var els = document.getElementsByClassName(md_class_name); -->
+<!--         els[0].setAttribute('quid', id); -->
+<!--         els[0].onclick = function() {  // Open a modal iframe to display the question -->
+<!--           openModal(); -->
+<!--           var params = { -->
+<!--              action: 'question_preview', -->
+<!--              quid: this.getAttribute('quid') -->
+<!--           }; -->
+<!--           $('#question-preview').html($('<iframe />').attr( -->
+<!--              {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show(); -->
+<!--         }; -->
+<!--       } -->
+
+<!--       // Row 1 is for the number of attempts -->
+<!--       row = table.insertRow(1); -->
+<!--       cell = row.insertCell(0); -->
+<!--       cell.innerHTML = "Attempts"; -->
+<!--       for (var i= 0; i < attempts_array.length; i++) { -->
+<!--         var cell = row.insertCell(i+1); -->
+<!--         cell.innerHTML = attempts_array[i][1]; -->
+<!--       } -->
+
+<!--       // Row 2 is for the student's score -->
+<!--       row = table.insertRow(2); -->
+<!--       cell = row.insertCell(0); -->
+<!--       cell.innerHTML = "Scores"; -->
+<!--       for (var i= 0; i < attempts_array.length; i++) { -->
+<!--         var cell = row.insertCell(i+1); -->
+<!--         cell.innerHTML = attempts_array[i][2]; -->
+<!--       } -->
+      return table;
+   } // def
+    
+
   </script>
 {% endblock %}
 
@@ -135,7 +279,11 @@
   <script>
   var lessonsJson = '{{ lessons|safe }}';
   var lessonsObject = jQuery.parseJSON(lessonsJson);
-  window.lessonsObject = lessonsObject;
+  </script>
+{% endif %}
+{% if all_lessons %}
+  <script>
+  var all_lessons = '{{ all_lessons }}';
   </script>
 {% endif %}
 {% if students %}
@@ -254,8 +402,21 @@
       {% endif %}
     </div>
   </div>
-  <div id="questions-container"></div>
+
+  <div id="questions-container">
+   <table id="questions-table"></table>
+  </div>
+
+    <div id="modal-window" style="display: none;">
+      <div id="question-background"></div>
+      <div id="question-container">
+        <a class="gcb-button question-close-button">X</a>
+        <div id="question-preview"><iframe  id="question-preview" /></div>
+      </div>
+    </div>
+
 </div>
+
 {% else %}
 {# I18N: Shown if the user is not a registered teacher. #}
 <p>Only registered teachers have access to the Teacher Dashboard.
