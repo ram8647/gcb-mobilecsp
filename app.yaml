@@ -1,5 +1,5 @@
 application: mobilecsp-201608  # FIXME: Replace this with your application id
-version: 1
+version: dev
 runtime: python27
 api_version: 1
 threadsafe: false
