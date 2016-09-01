@@ -10,7 +10,7 @@
 
 {% block subtitle %}
   {# I18N: Title of the webpage. #}
-  - {{ gettext('Student Dashboard for {{ student_email }}') }}
+  - {{ gettext('Progress Details for {{ student_email }}') }}
 {% endblock subtitle %}
 
 {% block assets %}
@@ -288,7 +288,7 @@
 {% endif %}
 
 <div id="student-detail-section" {% if not student_email %} style="display: none;" {% endif %} >
-  <h2>Dashboard for {{ student.name }} (<span class="student-name">{{ student_email }})</span></h2>
+  <h2>Progress Details for Student {{ student.name }} (<span class="student-name">{{ student_email }})</span></h2>
     <div class="student-detail" style="margin: 5px;">
       <div style="margin: 3px;">
        <table>
