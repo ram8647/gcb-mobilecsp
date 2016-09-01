@@ -32,6 +32,7 @@ from models import resources_display
 from models import roles
 from models import transforms
 from models.models import MemcacheManager
+from models.models import Student
 
 # In our module
 import messages
@@ -190,18 +191,41 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         update_dict = transforms.json_to_dict(
             transforms.loads(payload), schema.get_json_schema_dict())
 
-        update_dict['students'] = ''.join(update_dict['students'].split())  # Remove whitespace
-
-#         bad_emails = []
-#         for email in update_dict['students']:
-#             student = Student.get_first_by_email(email)[0]  # returns a tuple
-#             if not student:
-#                 bad_emails.append(email)
-
-#         if bad_emails != []:
-#             transforms.send_json_response(
-#                 self, 401, 'The following were invalid emails:' + str(bad_emails), {'key': key})
-#             return
+        # Check for invalid emails -- email must be a registered student
+        emails = update_dict['students'].split(',')
+        
+        return_code = 200
+        bad_emails = []
+        good_emails = []
+        for email in emails:
+            email = email.strip(' \t\n\r')
+            if email:
+                logging.debug('***RAM*** email = |' + email + '|')
+                student = Student.get_first_by_email(email)[0]  # returns a tuple
+                if not student:
+                    bad_emails.append(email)
+                else:
+                    good_emails.append(email)
+     
+        confirm_message  = 'Confirmation\n'
+        confirm_message += '------------\n\n\n' 
+        if bad_emails:
+            logging.info('***RAM*** bad_emails found = ' + str(bad_emails))
+            return_code = 401
+            confirm_message = 'The following were invalid emails:\n'
+            for email in bad_emails: 
+                confirm_message += email + '\n'
+            confirm_message += '\n Either there is no student with that email\n'
+            confirm_message += '\n currently registered for the course.  Or there is a \n'
+            confirm_message += '\n typo in the email address provided.\n\n\n'
+        if good_emails:
+            logging.info('***RAM*** good_emails found = ' + str(good_emails))
+            confirm_message += 'Students with the following emails\n'
+            confirm_message += 'are currently registered in your section:\n'
+            for email in good_emails:
+                confirm_message += email + '\n'
+          
+            update_dict['students'] = ','.join(good_emails)  # Comma-delimited
 
         entity.labels = common_utils.list_to_text(
             resources_display.LabelGroupsHelper.field_data_to_labels(
@@ -210,11 +234,18 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
         transforms.dict_to_entity(entity, update_dict)
 
-        logging.debug('***RAM*** entity = ' + str(entity))
-
         entity.put()
+        if return_code == 200:
+            confirm_message += 'Your section was successfully updated and saved.\n\n\n\n\n'
+        else:
+            confirm_message += 'Other information for your section was successfully updated and saved.\n\n\n\n\n'
+        confirm_message += 'Confirmation\n'
+        confirm_message += '------------\n'
 
-        transforms.send_json_response(self, 200, 'Saved Section.')
+        transforms.send_json_response(
+            self, return_code, confirm_message, {'key': key})
+#        return
+#        transforms.send_json_response(self, 200, 'Saved Section.')
 
     def delete(self):
         """Deletes a section."""
