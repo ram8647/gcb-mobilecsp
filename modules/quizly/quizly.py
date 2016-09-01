@@ -147,7 +147,8 @@ class QuizlyExerciseTag(tags.BaseTag):
 
         id_iconholder = 'icon-holder-' + quizname    #  Div where icon goes in HTML doc
 
-        logging.info('RAM: *** QUIZLY render: student=%s unit=%s lesson=%s instance=%s quiz=%s', student.email,unitid, lessonid, instanceid, quizname)
+        if not student.is_transient:
+            logging.info('RAM: *** QUIZLY render: student=%s unit=%s lesson=%s instance=%s quiz=%s', student.email,unitid, lessonid, instanceid, quizname)
 
         # Creates a record of quiz on window.quizlies.
         script = ''
