@@ -192,6 +192,17 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
         update_dict['students'] = ''.join(update_dict['students'].split())  # Remove whitespace
 
+#         bad_emails = []
+#         for email in update_dict['students']:
+#             student = Student.get_first_by_email(email)[0]  # returns a tuple
+#             if not student:
+#                 bad_emails.append(email)
+
+#         if bad_emails != []:
+#             transforms.send_json_response(
+#                 self, 401, 'The following were invalid emails:' + str(bad_emails), {'key': key})
+#             return
+
         entity.labels = common_utils.list_to_text(
             resources_display.LabelGroupsHelper.field_data_to_labels(
                 update_dict))
