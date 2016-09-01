@@ -119,17 +119,17 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     else:
                         self.num_attempts_dict[student.email][answer.question_id] += 1
                     question_answer_dict = {}
-#                    question_answer_dict['unit_id'] = answer.unit_id
-#                    question_answer_dict['lesson_id'] = answer.lesson_id
+                    question_answer_dict['unit_id'] = answer.unit_id
+                    question_answer_dict['lesson_id'] = answer.lesson_id
                     question_answer_dict['sequence'] = answer.sequence
                     question_answer_dict['question_id'] = answer.question_id
                     question_answer_dict['question_desc'] = question_desc
                     question_answer_dict['question_type'] = answer.question_type
-#                    question_answer_dict['timestamp'] = answer.timestamp
+                    question_answer_dict['timestamp'] = answer.timestamp
                     question_answer_dict['answers'] = answer.answers
                     question_answer_dict['score'] = answer.score
                     question_answer_dict['weighted_score'] = answer.weighted_score
-#                    question_answer_dict['tallied'] = answer.tallied
+                    question_answer_dict['tallied'] = answer.tallied
 
                     if answer.sequence in lesson_answers and lesson_answers[answer.sequence] < timestamp:
                         lesson_answers[answer.sequence] = question_answer_dict
@@ -164,13 +164,24 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
         possible_score = 0
         choices = None
+        choices_scores_only = []
         if question_info:
             if 'choices' in question_info.dict:
                 choices = question_info.dict['choices']
+
+                logging.warning('***RAM*** choices = ' + str(choices))
+
                 #calculate total possible points for questions
+                i = 0
                 for choice in choices:
                     if float(choice['score']) > 0:
                         possible_score += float(choice['score'])
+
+                    # Calculating an abbreviated choices array
+                    choices_scores_only.append( {'score': choice['score'], 'text': chr(ord('A') + i) } )
+                    i = i + 1
+                logging.warning('***RAM*** scores only = ' + str(choices_scores_only))
+
             elif 'graders' in question_info.dict:
                 choices = question_info.dict['graders']
                 for grader in choices:
@@ -180,20 +191,22 @@ class ActivityScoreParser(jobs.MapReduceJob):
         else:
             possible_score = 1
 
+
         if not question_answer:
             question_answer_dict = {}
-#            question_answer_dict['unit_id'] = unit_id
-#            question_answer_dict['lesson_id'] = lesson_id
+            question_answer_dict['unit_id'] = unit_id
+            question_answer_dict['lesson_id'] = lesson_id
             question_answer_dict['sequence'] = sequence
             question_answer_dict['question_id'] = question['id']
             question_answer_dict['description'] = question_desc
             question_answer_dict['question_type'] = 'NotCompleted'
-#            question_answer_dict['timestamp'] = 0
+            question_answer_dict['timestamp'] = 0
             question_answer_dict['answers'] = ''
             question_answer_dict['score'] = 0
             question_answer_dict['weighted_score'] = 0
-#            question_answer_dict['tallied'] = False
+            question_answer_dict['tallied'] = False
             question_answer_dict['possible_points'] = possible_score
+            question_answer_dict['choices'] = choices_scores_only
 #            question_answer_dict['choices'] = choices
 
             unit = self.activity_scores[student_id].get(unit_id, {})
@@ -201,18 +214,19 @@ class ActivityScoreParser(jobs.MapReduceJob):
             lesson[sequence] = question_answer_dict
         else:
             question_answer_dict = {}
-#            question_answer_dict['unit_id'] = question_answer['unit_id']
-#            question_answer_dict['lesson_id'] = question_answer['lesson_id']
+            question_answer_dict['unit_id'] = question_answer['unit_id']
+            question_answer_dict['lesson_id'] = question_answer['lesson_id']
             question_answer_dict['sequence'] = question_answer['sequence']
             question_answer_dict['question_id'] = question_answer['question_id']
             question_answer_dict['description'] = question_desc
             question_answer_dict['question_type'] = question_answer['question_type']
-#            question_answer_dict['timestamp'] = question_answer['timestamp']
+            question_answer_dict['timestamp'] = question_answer['timestamp']
             question_answer_dict['answers'] = question_answer['answers']
             question_answer_dict['score'] = question_answer['score']
             question_answer_dict['weighted_score'] = question_answer['weighted_score']
-#            question_answer_dict['tallied'] = question_answer['tallied']
+            question_answer_dict['tallied'] = question_answer['tallied']
             question_answer_dict['possible_points'] = possible_score
+            question_answer_dict['choices'] = choices_scores_only
 #            question_answer_dict['choices'] = choices
 
             self.activity_scores[student_id][unit_id][lesson_id][sequence] = question_answer_dict
@@ -250,7 +264,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
             logging.warning('***RAM*** dict ' + str(questions_dict[q]))
 
     @classmethod
-    def get_activity_scores(cls, student_user_ids, course, force_refresh = False):
+    def get_activity_scores(cls, student_user_ids, course, force_refresh = True):
         """Retrieve activity data for student using EventEntity"""
 
         #instantiate parser object
@@ -327,7 +341,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
         score_data['date'] = cached_date
         score_data['scores'] = activityParser.activity_scores
         score_data['attempts'] = activityParser.num_attempts_dict
-        logging.debug('***RAM*** get_activity_scores returning: ' + str(score_data['attempts']))
+        logging.debug('***RAM*** get_activity_scores returning attempts: ' + str(score_data['attempts']))
 
         return score_data
 

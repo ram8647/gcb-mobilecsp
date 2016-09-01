@@ -19,6 +19,9 @@
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/tipped.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/question_preview.css" /> 
+  <style> 
+  .correct{background-color: #ccffcc;} 
+  </style>
   <script type="text/javascript" src="assets/lib/lessons/modal-window.js"></script>
   <script src="assets/lib/lessons/tipped.js"></script>
 
@@ -154,21 +157,43 @@
       });
     });
 
-    function calc_number_of_answer_columns(unit_id, lesson_id) {
-      var maxlen = 0;
-      var scores_obj;
-      for (var i = 0; i < studentsJs.length; i++) {
+    /*
+     * Constructs a table of scores for the questions in (unit_id, lesson_id).
+     * Based on Eric Hiller's jquery algorithm -- nice!
+     * 
+     * The table shows the number of times students in the course
+     *  selected particular choices as their answers.
+     */
+    function construct_questions_table(unit_id, lesson_id) {
+      questions_table = {}
+      for (var i = 0; i < studentsJs.length; i++) { 
         var scores = studentsJs[i]['scores'];
-        if (scores[unit_id] && scores[unit_id][lesson_id]) {
-          scores = studentsJs[i].scores[unit_id][lesson_id];
-          var len = Object.keys(scores).length;
-          if (len  > maxlen) 
-            maxlen = len;
-            scores_obj = scores;
-        }
-      }
-      return [scores_obj, maxlen - 1];  // One of the keys is 'ratio', not an answer choice
+        // If this student did questions in (unit,lesson)
+        if (scores[unit_id] && scores[unit_id][lesson_id]) { 
+            var questions = scores[unit_id][lesson_id];
+            for (var index in questions) {
+              if (index == 'ratio')
+                continue;
+              var question = questions[index];
+              var sequence = question['sequence'];
+              if (! (sequence in questions_table) ) {
+                  for (var choice in question['choices']) {
+                    question['choices'][choice]['counter'] = 0;
+                  }          
+                  questions_table[sequence] = question;
+              } // if sequence
+              for (var answer in question['answers']) {
+                if (question['question_type'] == 'McQuestion') {
+                  var index = question['answers'][answer];
+                  questions_table[sequence]['choices'][index]['counter'] += 1;                
+                }
+              }
+            } // for questions
+        } // if scores
+      } // for students
+      return questions_table;
     }
+
 
     // Creates a table of all the questions in a given lesson.
     // With a break down by answers given by students
@@ -179,89 +204,39 @@
         table.removeChild(table.firstChild);
       }
 
-//      var num_columns = calc_number_of_answer_columns(unit_id, lesson_id);
-      var result = calc_number_of_answer_columns(unit_id, lesson_id);
-      var scores_obj = result[0];
-      var num_columns = result[1];
-      if (num_columns <= 0) 
+      var questions_arr = construct_questions_table(unit_id, lesson_id);
+      if (questions_arr == {})
         return;
 
       // Row 0 is for the headings
       var row = table.insertRow(0);
-      row.insertCell(0).innerHTML = '<b>Questions</b>';
+      var x = document.getElementById('lesson-select-widget').selectedIndex;
+      row.insertCell(0).innerHTML = '<b>Questions for<br />' + 
+         document.getElementById('lesson-select-widget').options[x].innerHTML + '</b>';
+      row.insertCell(1).innerHTML = '<b>Average Score</b>';
 
-//      alert('num cols = ' + num_columns);
-      for (var i = 0; i < num_columns; i++) {
-        row.insertCell(i+1).innerHTML = 'Ans ' + (i+1);
+      for (var i = 0; i < 6; i++) {
+        row.insertCell(i+2).innerHTML = '<b>Choice ' + (i+1) + '</b>';
       }
       var j = 1;  // Table row index
-      for (var i in scores_obj) {
-        if (i != 'ratio') {
-          var id = scores_obj[i]['question_id'];
+      for (var question in questions_arr) {
+         var description = questions_arr[question]['description'];
 //          table.insertRow(j++).insertCell(0).innerHTML = "<div style=color:blue; quid='" + id + "' class='zmdi zmdi-eye'> Q" + id + "</div>";
-
-          table.insertRow(j++).insertCell(0).innerHTML = "<div style='color:blue;' >"  +
+         var row = table.insertRow(j++);
+         row.insertCell(0).innerHTML = "<div style='color:blue;' >"  +
              "<a target='_blank' class=zmdi zmdi eye'" + 
-             " href=https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=" + unit_id + "&lesson=" + lesson_id + "> Q " + id + "</a></div>";
-        }
+             " href=https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=" + unit_id + "&lesson=" + lesson_id + "> " + description + "</a></div>";
+         row.insertCell(1).innerHTML = "n/a";
+         var k = 2;
+         var choices = questions_arr[question]['choices'];
+         for (choice in choices) {
+           var cell = row.insertCell(k++);
+           cell.innerHTML = choices[choice]['counter'];
+           if (choices[choice]['score'] > 0) {
+                cell.className = 'correct';
+           }
+         }
       }
-
-      // Create handlers for each question
-<!--       var els = document.getElementsByClassName("zmdi zmdi-eye"); -->
-<!--       for (var i = 0; i < els.length; i++) { -->
-<!--         els[i].onclick = function() {  // Opens a modal iframe to display the question, code in modal-window.js -->
-<!--           openModal(); -->
-<!--           var params = { -->
-<!--              action: 'question_preview', -->
-<!--              quid: this.getAttribute('quid') -->
-<!--           }; -->
-<!--           $('#question-preview').html($('<iframe />').attr( -->
-<!--              {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show(); -->
-<!--         }; -->
-<!--       } // for -->
-
-<!--       var cell = row.insertCell(0); -->
-<!--       row.insertCell(0).innerHTML = <b>Student</b> -->
-
-<!--       cell.innerHTML = "Questions"; -->
-
-<!--       for (var i= 0; i < attempts_array.length; i++) {  // Queston Ids -->
-<!--         var cell = row.insertCell(i+1); -->
-<!--         var id = attempts_array[i][0]; -->
-
-<!--         // Make a unique class name for each clickable icon -- icns from material design, see link above -->
-<!--         var md_class_name = "zmdi zmdi-" + id + " zmdi-eye"; -->
-<!--         cell.innerHTML = "<div style='color:blue'; class='" + md_class_name + "'> Q" + (i+1) + "</div>"; -->
-<!--         var els = document.getElementsByClassName(md_class_name); -->
-<!--         els[0].setAttribute('quid', id); -->
-<!--         els[0].onclick = function() {  // Open a modal iframe to display the question -->
-<!--           openModal(); -->
-<!--           var params = { -->
-<!--              action: 'question_preview', -->
-<!--              quid: this.getAttribute('quid') -->
-<!--           }; -->
-<!--           $('#question-preview').html($('<iframe />').attr( -->
-<!--              {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show(); -->
-<!--         }; -->
-<!--       } -->
-
-<!--       // Row 1 is for the number of attempts -->
-<!--       row = table.insertRow(1); -->
-<!--       cell = row.insertCell(0); -->
-<!--       cell.innerHTML = "Attempts"; -->
-<!--       for (var i= 0; i < attempts_array.length; i++) { -->
-<!--         var cell = row.insertCell(i+1); -->
-<!--         cell.innerHTML = attempts_array[i][1]; -->
-<!--       } -->
-
-<!--       // Row 2 is for the student's score -->
-<!--       row = table.insertRow(2); -->
-<!--       cell = row.insertCell(0); -->
-<!--       cell.innerHTML = "Scores"; -->
-<!--       for (var i= 0; i < attempts_array.length; i++) { -->
-<!--         var cell = row.insertCell(i+1); -->
-<!--         cell.innerHTML = attempts_array[i][2]; -->
-<!--       } -->
       return table;
    } // def
     
@@ -367,7 +342,7 @@
             <tr>
              <td>
               <a href="teacher?action=student_dashboard&student={{ student.email }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">
-                 <button class="gcb-button" type="submit">View Dashboard</button>
+                 <button class="gcb-button" type="submit">View Progress</button>
               </a>
 <!--                 <form id='view-dashboard-button-{{loop.index}}' action='edit_sections?action=add_section'  method='GET'> -->
 <!--                   <input type="hidden" name="action" value="add_section"> -->
@@ -424,3 +399,19 @@
 </p>
 {% endif %}
 {% endblock %}
+
+<!-- Stashing this here temporarily -->
+<!--       // Create handlers for each question -->
+<!--       var els = document.getElementsByClassName("zmdi zmdi-eye"); -->
+<!--       for (var i = 0; i < els.length; i++) { -->
+<!--         els[i].onclick = function() {  // Opens a modal iframe to display the question, code in modal-window.js -->
+<!--           openModal(); -->
+<!--           var params = { -->
+<!--              action: 'question_preview', -->
+<!--              quid: this.getAttribute('quid') -->
+<!--           }; -->
+<!--           $('#question-preview').html($('<iframe />').attr( -->
+<!--              {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show(); -->
+<!--         }; -->
+<!--       } // for -->
+
