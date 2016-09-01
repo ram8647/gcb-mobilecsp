@@ -34,24 +34,30 @@
        <table>
         <tbody>
          <tr>
-          <td>
+          <td style="width:70%">
             <h2>Teacher Dashboard</h2>
              <p>
                You can manage your student enrollment here, as well as view each student's progress at the course, unit, and lesson level.
-               <br />Click here for <a target="_blank" href="https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY">instructions and documentation</a>.
+               &nbsp;Click here for <a target="_blank" href="https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY">instructions and documentation</a>.
              </p>   
           </td>
           <td>
-           {% if teacher.is_admin %}
-<!--              NOTE: For GET, GCB constructs an action URL that doesn't work.     -->
-<!--              <form id='admin-button' action='{{ teacher.add_action }}' method='GET'> -->
-<!--                <input type="hidden" name="xsrf_token" value="{{ teacher.add_xsrf_token }}"> -->
-             <form id='admin-button' action='mcsp_admin?action=edit_teachers' method='GET'>
-               <input type="hidden" name="action" value="edit_teachers">
-               <button class="gcb-button gcb-button-action gcb-button-author" type="submit">Admin: Add Teacher</button>
-             </form>
-             <div style='clear: both; padding-top: 2px;' />
-           {% endif %}
+           <table><tr><td>
+                    <h3>(<a target="_blank" href="https://mobilecsp-201608.appspot.com/teach_mobilecsp">Mobile CSP Teacher Site</a>)</h3> 
+                 </td></tr>
+                 <tr><td>
+		      {% if teacher.is_admin %}
+	   <!--              NOTE: For GET, GCB constructs an action URL that doesn't work.     -->
+	   <!--              <form id='admin-button' action='{{ teacher.add_action }}' method='GET'> -->
+	   <!--                <input type="hidden" name="xsrf_token" value="{{ teacher.add_xsrf_token }}"> -->
+			<form id='admin-button' action='mcsp_admin?action=edit_teachers' method='GET'>
+			  <input type="hidden" name="action" value="edit_teachers">
+			  <button class="gcb-button gcb-button-action gcb-button-author" type="submit">Admin: Add Teacher</button>
+			</form>
+			<div style='clear: both; padding-top: 2px;' />
+		      {% endif %}
+                  </td></tr>
+           </table>
           </td>
          </tr>
         </tbody>
