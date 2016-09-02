@@ -178,8 +178,11 @@ class QuizlyExerciseTag(tags.BaseTag):
         # Has this lesson already been completed?
 
         progress_tracker = handler.get_course().get_progress_tracker()
-        student_progress = progress_tracker.get_or_create_progress(student)
-        completed = progress_tracker.is_component_completed(student_progress, unitid, lessonid, instanceid)
+        if not student.is_transient:
+            student_progress = progress_tracker.get_or_create_progress(student)
+            completed = progress_tracker.is_component_completed(student_progress, unitid, lessonid, instanceid)
+        else:
+            completed = False
 
         # Handler for the checkAnswer button. Quizly puts the quizName and result
         #  on window.parent.quizlies and this script reads it from there.
