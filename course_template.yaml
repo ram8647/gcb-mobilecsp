@@ -31,14 +31,14 @@ course:
 
 institution:
   # Name of your institution
-  name:
+  name: Mobile Computer Science Principles
 
   # URL of your institution's webpage
-  url:
+  url: http://mobile-csp.org
 
   # Link and alt text for the logo of the course or your institution
   logo:
-    url: 'assets/img/your_logo_here.png'
+    url: 
     alt_text:
 
 
@@ -80,7 +80,7 @@ base:
   show_gplus_button: True
 
   # Header phrase for the main navigation bar
-  nav_header: 'Search Education'
+  nav_header: 'MobileCSP'
 
   # Link to your privacy policy and terms of service
   privacy_terms_url:
