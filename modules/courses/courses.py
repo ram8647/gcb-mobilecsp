@@ -19,6 +19,7 @@ __author__ = 'Pavel Simakov (psimakov@google.com)'
 from common import resource
 from controllers import utils
 from controllers import resources
+from controllers import privacy
 from models import content
 from models import resources_display
 from models import custom_modules
@@ -75,6 +76,7 @@ def register_module():
     # setup routes
     courses_routes = [
         ('/forum', utils.ForumHandler),
+        ('/privacy', privacy.PrivacyHandler),
         ('/register', utils.RegisterHandler),
         ('/rest/locale', utils.StudentLocaleRESTHandler),
         ('/resources', resources.ResourcesHandler),
