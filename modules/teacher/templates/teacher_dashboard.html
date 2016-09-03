@@ -43,7 +43,7 @@
           </td>
           <td>
            <table><tr><td>
-                    <h3>(<a target="_blank" href="https://mobilecsp-201608.appspot.com/teach_mobilecsp">Mobile CSP Teacher Site</a>)</h3> 
+                    <h3>(<a target="_blank" href="https://ram8647.appspot.com/teach_mobilecsp">Mobile CSP Teacher Site</a>)</h3> 
                  </td></tr>
                  <tr><td>
 		      {% if teacher.is_admin %}
@@ -151,9 +151,18 @@
   </div>
 </div>
 {% else %}
-{# I18N: Shown if the user is not a registered teacher. #}
-<p>Only registered teachers have access to the Teacher Dashboard.
-<br />Please contact an admin.
+{# I18N: Shown if the user is not registered for the dashboard. #}
+<p>
+The Teacher Dashboard is available only to teachers who have been
+registered to use it. It provides a way to monitor the performance
+of students in your section(s) of the course.
+<br>
+<br>To sign up, please send an email to <i>mobilecsp.trincoll@gmail.com</i>.
+<br>
+<br><b>NOTE:</b> The Teacher Dashboard is located on the student site (mobileCSP) because
+it provides access to student data.  If you are seeing this page on the teacher's site 
+(teach_mobileCSP) rather than on the student site, 
+<a target='_blank' href='https://ram8647.appspot.com/mobileCSP/teacher'>click here to go to the student site</a>.
 </p>
 {% endif %}
 {% endblock %}
