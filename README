@@ -30,6 +30,17 @@ In v 1.10, these are listed as 'my items' under Style > Templates.
   summary.html
   unit.html
 
+>>>>>>>>>>>>>>>>>>>>>>>  SETTINGS  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+*  Note that settings are not necessarily copied over when you make new versions
+of an existing course. 
+
+* Also, if settings have been changed through the dashboard, then changing them
+in course.yaml doesn't seem to have an effect.
+
+* Also, templates and other assets that have been overridden in the dashboard
+are not updated via the command line (appcfg).  
+
 >>>>>>>>>>>>>>>>>>>>>>> OUTLINE OF UPGRADING PROCESS >>>>>>>>>>>>>>>>>>>>>>>>
 See details here:  
    https://www.google.com/edu/openonline/course-builder/docs/1.10/upgrade-course-builder/upgrade-course-builder.html
