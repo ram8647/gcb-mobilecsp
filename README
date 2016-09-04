@@ -30,6 +30,10 @@ In v 1.10, these are listed as 'my items' under Style > Templates.
   summary.html
   unit.html
 
+>>>>>>>>>>>>>>>>>>>>>>>> CHANGING ON teach_mobileCSP <<<<<<<<<<<<<<<<<<<<<<<<
+* The '(Teachers)' tab appears only on the student site. This requires that
+  the Dashboard be used to change base-cours.html on the Teacher site.
+
 >>>>>>>>>>>>>>>>>>>>>>>  SETTINGS  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 *  Note that settings are not necessarily copied over when you make new versions
