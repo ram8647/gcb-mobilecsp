@@ -92,8 +92,15 @@
          quizzes_cell.innerHTML = quiz_ratio;
          if (unit_id != 'course_completion') {
            unit_cell.innerHTML = student['progress_dict']['unit_completion'][unit_id]
-           if (lesson_id != "NA")
-             lesson_cell.innerHTML = student['progress_dict']['lessons_progress'][unit_id][lesson_id] / 2 * 100
+           if (lesson_id != "NA") {
+             var lesson_prog =  student['progress_dict']['lessons_progress'][unit_id][lesson_id];
+             if (lesson_prog == 2)
+               lesson_cell.innerHTML =  'Completed';
+             else if (lesson_prog == 1)
+               lesson_cell.innerHTML =  'In progress';
+             else
+               lesson_cell.innerHTML =  'Not started';
+           }
            else
              lesson_cell.innerHTML = "N/A";
          } else {
