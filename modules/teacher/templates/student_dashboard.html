@@ -73,12 +73,20 @@
            cell.innerHTML = "<div style='color:blue'; unit_id='" + uid + "' lesson_id='" + lid + "' class='lesson-title'> " +  lessons[k]['title']  
              + "&nbsp; <span class='zmdi zmdi-eye' ></span></div>";
            cell = row.insertCell(1);
-           var progress = studentJs['progress_dict']['lessons_progress'][uid][lid]/2;   // 0, 1, or 2
-           cell.innerHTML = progress * 100  + ' %';
+//           var progress = studentJs['progress_dict']['lessons_progress'][uid][lid]/2;   // 0, 1, or 2
+           var progress = studentJs['progress_dict']['lessons_progress'][uid][lid];   // 0, 1, or 2
+           var progress_bar = progress / 2;
+           if (progress == 2) 
+             cell.innerHTML = 'Completed';
+           else if (progress == 1)
+             cell.innerHTML = 'In progress';
+           else
+             cell.innerHTML = 'Not started';
+//           cell.innerHTML = progress * 100  + ' %';
            cell = row.insertCell(2);
-           var progressHTML = "<progress class=student-course-progress value=" + progress + ">";
+           var progressHTML = "<progress class=student-course-progress value=" + progress_bar + ">";
            progressHTML += "<div class=progress-bar>";
-           progressHTML += "<span style=width:" + progress + " ;></span></div></progress>";
+           progressHTML += "<span style=width:" + progress_bar + " ;></span></div></progress>";
            cell.innerHTML = progressHTML; 
            cell = row.insertCell(3);
            cell.innerHTML = "<div id=lesson-completion-" + lid + " class='lesson-completion'> </div>";
