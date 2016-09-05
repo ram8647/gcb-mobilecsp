@@ -76,6 +76,10 @@ class ActivityScoreParser(jobs.MapReduceJob):
             }
 
     def parse_activity_scores(self, activity_attempt):
+        '''
+           Parses activity scores recieved from the mapper.  This is called in
+           the mapper callback function.
+        '''
         if activity_attempt.source == 'tag-assessment':
             data = transforms.loads(activity_attempt.data)
 
@@ -95,12 +99,12 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 data, questions, valid_question_ids, assessment_weights,
                 group_to_questions, timestamp)
 
-            #add score to right lesson
-            temp_index = data['instanceid']
-#            logging.debug('***********RAM************** data[instanceid] = ' + temp_index)
+            # Add score to right lesson
+            instance_id = data['instanceid']
+#            logging.debug('***********RAM************** data[instanceid] = ' + instance_id)
 
             try: 
-                question_info = questions[temp_index]
+                question_info = questions[instance_id]
                 unit_answers = student_answers.get(question_info['unit'], {})
                 lesson_answers = unit_answers.get(question_info['lesson'], {})
 
@@ -118,6 +122,9 @@ class ActivityScoreParser(jobs.MapReduceJob):
                         self.num_attempts_dict[student.email][answer.question_id] = 1
                     else:
                         self.num_attempts_dict[student.email][answer.question_id] += 1
+
+                    logging.warning('***RAM*** parse ' + str(answer.unit_id) + ' ' +
+                        str(answer.lesson_id) + ' ' + str(answer.sequence) + ' score:' + str(answer.score))
                     question_answer_dict = {}
                     question_answer_dict['unit_id'] = answer.unit_id
                     question_answer_dict['lesson_id'] = answer.lesson_id
@@ -131,6 +138,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     question_answer_dict['weighted_score'] = answer.weighted_score
                     question_answer_dict['tallied'] = answer.tallied
 
+                    # Note time stamp here
                     if answer.sequence in lesson_answers and lesson_answers[answer.sequence] < timestamp:
                         lesson_answers[answer.sequence] = question_answer_dict
                     elif answer.sequence not in lesson_answers:
@@ -141,18 +149,25 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
                 self.activity_scores[student.email] = student_answers
             except:
-                logging.warning('***********RAM************** bad key ' + temp_index)
-                self.activity_scores = { }
+                logging.warning('***********RAM************** bad instance_id ' + instance_id +
+                    ' This may be a quizly question.')
 #                logging.debug('***RAM*** num_attempts_dict ' + str(self.num_attempts_dict))
-
 #        logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
         return self.activity_scores
 
     def build_missing_score(self, question, question_info, student_id, unit_id, lesson_id, sequence=-1):
+        ''' Builds a partial question_answer_dict
+
+            This is called for each student immediately after launching the mapper query.
+        '''
+
         if sequence == -1:
             sequence = question['sequence']
 
         question_answer = None
+
+        # If (unit,lesson) already in this student's activity_scores then
+        #  question_answer is the next question_answer that matches the sequence.
         if unit_id in self.activity_scores[student_id] and lesson_id in \
                 self.activity_scores[student_id][unit_id]:
             question_answer = next((x for x in self.activity_scores[student_id][unit_id][lesson_id].values()
@@ -169,18 +184,25 @@ class ActivityScoreParser(jobs.MapReduceJob):
             if 'choices' in question_info.dict:
                 choices = question_info.dict['choices']
 
-                logging.warning('***RAM*** choices = ' + str(choices))
+#                logging.warning('***RAM*** choices = ' + str(choices))
 
-                #calculate total possible points for questions
+                # Calculate total possible points for questions by iterating
+                # through the answer choices and summing their individual values.
+                # For multiple choice questions, one choice will be 1.0 (correct)
+                # and the others 0.0.  For multiple answer questions, each correct
+                # is worth 1/n of the value, where n is the number of correct choices.
+                # In any case, the total should typically sum to 1.0.
+                # Q: Is possible score always 1?  If so why do we need this?
                 i = 0
                 for choice in choices:
                     if float(choice['score']) > 0:
                         possible_score += float(choice['score'])
 
-                    # Calculating an abbreviated choices array
+                    # Calculating an abbreviated choices array that is passed back.
+                    # We don't need the questions and answers text.
                     choices_scores_only.append( {'score': choice['score'], 'text': chr(ord('A') + i) } )
                     i = i + 1
-                logging.warning('***RAM*** scores only = ' + str(choices_scores_only))
+#                logging.warning('***RAM*** scores only = ' + str(choices_scores_only))
 
             elif 'graders' in question_info.dict:
                 choices = question_info.dict['graders']
@@ -191,8 +213,12 @@ class ActivityScoreParser(jobs.MapReduceJob):
         else:
             possible_score = 1
 
-
+        #  If there is no question_answer yet in activity_scores for this student
+        #   construct a partial question_answer_dict with default values.  Otherwise
+        #   fill in the existing dict with values from the student's question_answer.
         if not question_answer:
+            logging.warning('***RAM*** Initializing dict for ' +
+                str(unit_id) + ' ' + str(lesson_id) + ' ' + str(sequence))
             question_answer_dict = {}
             question_answer_dict['unit_id'] = unit_id
             question_answer_dict['lesson_id'] = lesson_id
@@ -213,6 +239,9 @@ class ActivityScoreParser(jobs.MapReduceJob):
             lesson = unit.get(lesson_id, {})
             lesson[sequence] = question_answer_dict
         else:
+            logging.warning('***RAM*** Updating dict for ' +
+                str(question_answer['unit_id']) + ' ' + str(question_answer['lesson_id']) + ' ' + str(question_answer['sequence']) 
+                + ' score=' + str(question_answer['score']))
             question_answer_dict = {}
             question_answer_dict['unit_id'] = question_answer['unit_id']
             question_answer_dict['lesson_id'] = question_answer['lesson_id']
@@ -231,8 +260,13 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
             self.activity_scores[student_id][unit_id][lesson_id][sequence] = question_answer_dict
 
+    #validate total points for lessons, need both question collections for score and weight
     def build_missing_scores(self):
-         #validate total points for lessons, need both question collections for score and weight
+        ''' This is called from get_activity_scores right after launching the query mapper.
+
+            For each student in activity_scores, it sets up a data dict with partial
+            score data that is filled in when the scores are retrieved.
+        '''
         questions = self.params['questions_by_usage_id']
         questions_info = self.params['questions_by_question_id']
         for student_id in self.activity_scores:
@@ -265,24 +299,56 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
     @classmethod
     def get_activity_scores(cls, student_user_ids, course, force_refresh = True):
-        """Retrieve activity data for student using EventEntity"""
+        """Retrieve activity data for student using EventEntity.
 
-        #instantiate parser object
+           For each student, launch a Query of EventEntities to retrieve student
+           scores.  The Query is launched as a map-reduce background process that
+           will return up to 500 results, reporting back every second.  It reports
+           back by calling the map_fn callback, which in turn calls parse_activity
+           scores.
+
+           As soon as the Query is launched (in the background) the foreground
+           process calls build_missing_scores() to construct a student_answer.dict
+           that will be updated as score data for that student is received.
+
+           Events properties include a userid (a number) and a source (e.g.,
+           tag-assessement), a  recorded-on date (timestamp) and data (a dictionary).
+           Here's a typeical data dict:
+
+           {"loc": {"city": "mililani", "language": "en-US,en;q=0.8", "locale": "en_US",
+           "country": "US", "region": "hi", "long": -158.01528099999999, "lat": 21.451331,
+           "page_locale": "en_US"}, "instanceid": "yOkVTqWogdaF", "quid": "5733935958982656",
+           "score": 1, "location": "https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=1&lesson=45",
+           "answer": [0, 1, 2, 4], "type": "McQuestion", "user_agent":
+            "Mozilla/5.0 ..."}
+
+           Note that it includes the unit_id and lesson_id as part of the Url
+        """
+
+        # Instantiate parser object
         cached_date = datetime.datetime.now()
         activityParser = ActivityScoreParser()
 
         if force_refresh:
             activityParser.params = activityParser.build_additional_mapper_params(course.app_context)
 
+            #  Launch a background Query for each student's activity data.  This is expensive.
             for user_id in student_user_ids:
+                logging.warning('***RAM*** launching a query for student ' + str(user_id))
                 mapper = models_utils.QueryMapper(
-                    EventEntity.all().filter('user_id in', [user_id]), batch_size=500, report_every=1000)
+                    EventEntity.all().filter('user_id in', [user_id]), batch_size=1000, report_every=1000)
 
+                # Callback function -- e.g., 45-50 callbacks per query
                 def map_fn(activity_attempt):
+#                    logging.warning('***RAM*** map_fn ' + str(activity_attempt))
                     activityParser.parse_activity_scores(activity_attempt)
 
                 mapper.run(map_fn)
 
+            #  In the foreground create the student_answer_dict, which is stored at:
+            #   activity_scores[student][unit][lesson][sequence]  where sequence is
+            #   the question's sequential position within the lesson.
+            #  So each question in the lesson will have a question_answer_dict.
             activityParser.build_missing_scores()
 
             #Lets cache results for each student
@@ -341,7 +407,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
         score_data['date'] = cached_date
         score_data['scores'] = activityParser.activity_scores
         score_data['attempts'] = activityParser.num_attempts_dict
-        logging.debug('***RAM*** get_activity_scores returning attempts: ' + str(score_data['attempts']))
+        logging.debug('***RAM*** get_activity_scores returning scores: ' + str(score_data['scores']))
 
         return score_data
 
