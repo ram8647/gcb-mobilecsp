@@ -20,7 +20,6 @@
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/question_preview.css" /> 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
   <script type="text/javascript" src="assets/lib/lessons/modal-window.js"></script>
-
   <script>
      function hasClass(elem, className) {
        return elem.className.split(' ').indexOf(className) > -1;
@@ -212,22 +211,9 @@
 
         // Make a unique class name for each clickable icon -- icns from material design, see link above
         var md_class_name = "zmdi zmdi-" + id + " zmdi-eye";
-//        cell.innerHTML = "<div style='color:blue'; class='" + md_class_name + "'> Q" + (i+1) + "</div>";
         cell.innerHTML = "<div style='color:blue;' >"  +
              "<a target='_blank' class='" + md_class_name + 
              "' href=https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=" + unit_id + "&lesson=" + lesson_id + "> Q" + (i+1) + "</a></div>";
-
-<!--         var els = document.getElementsByClassName(md_class_name); -->
-<!--         els[0].setAttribute('quid', id); -->
-<!--         els[0].onclick = function() {  // Open a modal iframe to display the question -->
-<!--           openModal(); -->
-<!--           var params = { -->
-<!--              action: 'question_preview', -->
-<!--              quid: this.getAttribute('quid') -->
-<!--           }; -->
-<!--           $('#question-preview').html($('<iframe />').attr( -->
-<!--              {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show(); -->
-<!--         }; -->
       }
 
       // Row 1 is for the number of attempts
@@ -283,7 +269,6 @@
        }
     }
   </script>
-
   <script>
     $(document).ready(function() {
         setUpModalWindow();
@@ -296,7 +281,18 @@
 {% endif %}
 
 <div id="student-detail-section" {% if not student_email %} style="display: none;" {% endif %} >
-  <h2>Progress Details for Student {{ student.name }} (<span class="student-name">{{ student_email }})</span></h2>
+ <table style="width:95%">
+ <tbody>
+  <tr>
+   <td style="width:85%">
+    <h2>Progress Details for Student {{ student.name }} (<span class="student-name">{{ student_email }})</span></h2>
+   </td>
+   <td>
+     <button class="gcb-button" style="align:right;" type="submit" onclick="window.history.back()" >Back to Roster</button>   
+   </td>
+  </tr>
+ </tbody>
+ </table>
     <div class="student-detail" style="margin: 5px;">
       <div style="margin: 3px;">
        <table>
