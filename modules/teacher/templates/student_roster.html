@@ -41,11 +41,12 @@
     });
   
     var documentation = { 
-      "quiz" : "For a given lesson, quiz scores gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson. N/A means no quizzes were attempted.",
-      "lesson" : "For a given unit, lesson progress is either complete (100 %), in-progress (50 %) or not started (0 %).",
+      "quiz" : "For a given lesson, question progress gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson. N/A means the lesson has no quizzes.",
+      "lesson" : "For a given unit, lesson progress is either complete, in-progress, or not started. A lesson is considered complete if the student has attempted all of the quiz questions in the lesson. A lesson  that contains no quizzes is marked 'complete' when its page is visited.", 
+      "course": "Course (or unit) progress is the overall percentage of the course (or unit) completed by the student.",
       "unit": "Unit progress is the percentage of lessons completed in that unit. Lessons that do not contain quizzes are considered complete when visited.",
       "add/remove": "This button will let you add or remove students from your course.",
-      "dashboard": "The dashboard provides a detailed breakdown of a student's progress and performance.",
+      "dashboard": "The Student Progress page provides a detailed breakdown of a student's progress and performance.",
       "unitselect": "Choose an option here to see student performance for a particular unit.",
       "lessonselect": "After choosing a unit option choose an option here to see student performance for a particular lesson.",
     };
@@ -119,7 +120,7 @@
 //        $('#questions-container').empty();
         var newOptions = [];
         if (this.value != 'course_completion') {
-          document.getElementById('course-unit-progress-heading').innerHTML = 'Unit Progress %';
+          document.getElementById('course-unit-progress-heading').innerHTML = '<span class="hover help yui-wk-div" data-id="unit">Unit Progress %</span>';
           var lessons = lessonsObject[this.value];
           for (var i =0; i < lessons.length; i++) {
             newOptions.push({
@@ -128,7 +129,7 @@
             });
           }
         } else {
-          document.getElementById('course-unit-progress-heading').innerHTML = 'Course Progress %';
+          document.getElementById('course-unit-progress-heading').innerHTML = '<span class="hover help yui-wk-div" data-id="course">Course Progress %</span>';
           newOptions.push({
             key: 'NA',
             value: 'N/A'
@@ -218,7 +219,7 @@
       // Row 0 is for the headings
       var row = table.insertRow(0);
       var x = document.getElementById('lesson-select-widget').selectedIndex;
-      row.insertCell(0).innerHTML = '<b>Questions for<br />' + 
+      row.insertCell(0).innerHTML = '<b>Aggregate Class Peformance on <br /> Questions for<br />' + 
          document.getElementById('lesson-select-widget').options[x].innerHTML + '</b>';
       row.insertCell(1).innerHTML = '<b>Average Score</b>';
 
@@ -233,7 +234,7 @@
          row.insertCell(0).innerHTML = "<div style='color:blue;' >"  +
              "<a target='_blank' class=zmdi zmdi eye'" + 
              " href=https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=" + unit_id + "&lesson=" + lesson_id + "> " + description + "</a></div>";
-         row.insertCell(1).innerHTML = "n/a";
+         row.insertCell(1).innerHTML = "TBD";
          var k = 2;
          var choices = questions_arr[question]['choices'];
          for (choice in choices) {
@@ -339,9 +340,9 @@
             <th class="gcb-list__cell--icon"></th>
             <th class="gcb-list__cell--icon">Name</th>
             <th class="gcb-list__cell--icon">Email</th>
-            <th id="course-unit-progress-heading" class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="unit">Course Progress %</span></th>
+            <th id="course-unit-progress-heading" class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="course">Course Progress %</span></th>
             <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="lesson">Lesson Progress</span></th>
-            <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="quiz">Quiz Progress</span></th>
+            <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="quiz">Question Progress</span></th>
            </tr>
           </thead>
           <tbody> 
@@ -349,14 +350,8 @@
             <tr>
              <td>
               <a href="teacher?action=student_dashboard&student={{ student.email }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">
-                 <button class="gcb-button" type="submit">View Progress</button>
+                 <span class="hover help yui-wk-div" data-id="dashboard"><button class="gcb-button" type="submit">View Progress</button></span>
               </a>
-<!--                 <form id='view-dashboard-button-{{loop.index}}' action='edit_sections?action=add_section'  method='GET'> -->
-<!--                   <input type="hidden" name="action" value="add_section"> -->
-<!--                   <span class="hover help yui-wk-div" data-id="dashboard"> -->
-<!--                     <button class="gcb-button" type="submit">View Dashboard</button> -->
-<!--                   </span> -->
-<!--               </form> -->
                </td>
              <td id="student-name-cell-{{loop.index}}">
                {{ student.name }}
