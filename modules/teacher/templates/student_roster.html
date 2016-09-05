@@ -41,7 +41,7 @@
     });
   
     var documentation = { 
-      "quiz" : "For a given lesson, question progress gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson. N/A means the lesson has no quizzes.",
+      "quiz" : "For a given lesson, question progress gives the ratio of the number of correct quiz answers over the total number of quizzes in the lesson. N/A means either that the lesson was not started or has no quizzes .",
       "lesson" : "For a given unit, lesson progress is either complete, in-progress, or not started. A lesson is considered complete if the student has attempted all of the quiz questions in the lesson. A lesson  that contains no quizzes is marked 'complete' when its page is visited.", 
       "course": "Course (or unit) progress is the overall percentage of the course (or unit) completed by the student.",
       "unit": "Unit progress is the percentage of lessons completed in that unit. Lessons that do not contain quizzes are considered complete when visited.",
@@ -117,7 +117,6 @@
      */
     $(function() {
       $('.unit-select').change(function() {
-//        $('#questions-container').empty();
         var newOptions = [];
         if (this.value != 'course_completion') {
           document.getElementById('course-unit-progress-heading').innerHTML = '<span class="hover help yui-wk-div" data-id="unit">Unit Progress %</span>';
@@ -155,7 +154,6 @@
      */
     $(function() {
       $('.lesson-select').change(function() {
-//        $('#questions-container').empty();
         if ($(this).val() !== 'NA') {
           var sel = document.getElementById('unit-select-widget');
           var unit_id = sel.options[sel.selectedIndex].value;
@@ -229,10 +227,9 @@
       var j = 1;  // Table row index
       for (var question in questions_arr) {
          var description = questions_arr[question]['description'];
-//          table.insertRow(j++).insertCell(0).innerHTML = "<div style=color:blue; quid='" + id + "' class='zmdi zmdi-eye'> Q" + id + "</div>";
          var row = table.insertRow(j++);
          row.insertCell(0).innerHTML = "<div style='color:blue;' >"  +
-             "<a target='_blank' class=zmdi zmdi eye'" + 
+             "<a target='_blank' class='zmdi zmdi-eye'" + 
              " href=https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=" + unit_id + "&lesson=" + lesson_id + "> " + description + "</a></div>";
          row.insertCell(1).innerHTML = "TBD";
          var k = 2;
@@ -401,19 +398,4 @@
 </p>
 {% endif %}
 {% endblock %}
-
-<!-- Stashing this here temporarily -->
-<!--       // Create handlers for each question -->
-<!--       var els = document.getElementsByClassName("zmdi zmdi-eye"); -->
-<!--       for (var i = 0; i < els.length; i++) { -->
-<!--         els[i].onclick = function() {  // Opens a modal iframe to display the question, code in modal-window.js -->
-<!--           openModal(); -->
-<!--           var params = { -->
-<!--              action: 'question_preview', -->
-<!--              quid: this.getAttribute('quid') -->
-<!--           }; -->
-<!--           $('#question-preview').html($('<iframe />').attr( -->
-<!--              {id: 'question-preview', src: 'dashboard?' + $.param(params)})).show(); -->
-<!--         }; -->
-<!--       } // for -->
 
