@@ -138,8 +138,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     question_answer_dict['weighted_score'] = answer.weighted_score
                     question_answer_dict['tallied'] = answer.tallied
 
-                    # Note time stamp here
-                    if answer.sequence in lesson_answers and lesson_answers[answer.sequence] < timestamp:
+                    # If the timestamp on this event is after the timestamp on previous score
+                    if answer.sequence in lesson_answers and lesson_answers[answer.sequence]['timestamp'] < timestamp:
                         lesson_answers[answer.sequence] = question_answer_dict
                     elif answer.sequence not in lesson_answers:
                         lesson_answers[answer.sequence] = question_answer_dict
