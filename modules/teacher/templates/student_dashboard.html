@@ -157,7 +157,7 @@
           if (id in attempts) {
             question_attempts.push([id, attempts[id], score]);
           } else {
-            question_attempts.push([id, 0, 0]);
+            question_attempts.push([id, 0, score]);
           }
         }
 	return question_attempts;
