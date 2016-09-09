@@ -1,4 +1,5 @@
 __author__ = 'ehiller@css.edu'
+__author__ = 'ram8647@gmail.com'
 
 import datetime
 import logging
@@ -19,7 +20,15 @@ from models.models import MemcacheManager
 from models.progress import UnitLessonCompletionTracker
 
 class ActivityScoreParser(jobs.MapReduceJob):
-    """class to parse the data returned with activities"""
+    """
+        Class to parse the data returned from query of Event activities.
+
+        An tag-assessment Event is recorded every time a student attempts
+        a GCB question or Quizly exercise.  The only way to determine
+        student performance on questions and exercises is to
+        query the Events database, extract tag-assessment events and
+        process them.
+    """
     def __init__(self):
         """holds activity score info unit -> lesson -> question"""
         self.activity_scores = { }
@@ -77,144 +86,187 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 ActivityScoreParser._get_questions_by_question_id(questions_by_usage_id)
             }
 
+    def parse_quizly_scores(self, data, instance_id, timestamp, student, student_answers):
+         """
+             Processes Quizly exercises extracted from the Events query using the
+             instance_id for the quid.
+
+             Because Quizly exercises are not officially questions -- something that
+             needs to be fixed -- they don't have a quid and need to be processed in
+             an ad-hoc way. There is no question_info dict that can be used to get
+             information about Quizly exercises.
+
+             Also Quizly exercises don't have a 'sequence' number within the lesson.
+             To get around that we assign random numbers starting at 10. One problem
+             with this approach is that it doesn't preserve the sequence of Quizly
+             exercises within the lesson.
+         """
+
+#        logging.debug('***RAM*** A question with instance_id = ' + str(instance_id) +
+#          ' and no quid and location = ' + str(data['location']))
+         url = data['location']
+         quizly_unit_id =  int(url[url.find('unit=') + len('unit=') : url.find('&lesson=')])
+         quizly_lesson_id = int(url[ url.find('&lesson=') + len('&lesson=') : ])
+         quizly_score = data['score']
+         quizly_answer = data['answer']
+         quizly_type = 'Quizly'      # reported in data as SaQuestion
+         quizly_sequence = random.randint(10,30)                  #### Make up a random sequence #
+
+         # Create a dict for this Quizly exercise
+         question_answer_dict = {}
+         question_answer_dict['unit_id'] = quizly_unit_id
+         question_answer_dict['lesson_id'] = quizly_lesson_id
+         question_answer_dict['sequence'] = quizly_sequence       # Not given
+         question_answer_dict['question_id'] = instance_id        # Use instance_id as quid
+         question_answer_dict['description'] = 'Quizly exercise ' + instance_id
+         question_answer_dict['question_type'] = quizly_type
+         question_answer_dict['timestamp'] = timestamp
+         question_answer_dict['answers'] = [quizly_answer]   # T or F
+         question_answer_dict['score'] = quizly_score
+         question_answer_dict['weighted_score'] = quizly_score
+         question_answer_dict['tallied'] = False
+         question_answer_dict['choices'] = [{'text':'T','score':1},{'text':'F','score': 0}]   # Quizly's are T/F
+
+         # Use the instance_id to count the number of attempts for each Quizly exercise by a given student
+         if not student.email in self.num_attempts_dict:
+             self.num_attempts_dict[student.email] = {}
+         if not instance_id in self.num_attempts_dict[student.email]:
+             self.num_attempts_dict[student.email][instance_id] = 1
+         else:
+             self.num_attempts_dict[student.email][instance_id] += 1
+
+         # Either add the dict to the lesson_answers or update an existing one
+         unit_answers = student_answers.get(quizly_unit_id, {})
+         lesson_answers = unit_answers.get(quizly_lesson_id, {})
+
+         found = False
+         for seq in lesson_answers:
+             if lesson_answers[seq]['question_id'] == instance_id:      # Quizly already there
+                 found = True
+#                logging.debug('***RAM*** Quizly found answer for seq = ' + str(seq))
+                 if lesson_answers[seq]['timestamp'] < timestamp:      # Already there check time
+                     question_answer_dict['sequence'] = seq
+                     lesson_answers[seq] = question_answer_dict        # Replace it
+         if not found:
+             lesson_answers[quizly_sequence] = question_answer_dict    # Add Quizly
+#             logging.debug('***RAM*** Q ' + str(quizly_unit_id) + ' ' + str(quizly_lesson_id) + ' answers after ' + str(lesson_answers))
+
+         #  Add the Quizly exercise into the student's activity_scores
+         unit_answers[quizly_lesson_id] = lesson_answers
+         student_answers[quizly_unit_id] = unit_answers
+         self.activity_scores[student.email] = student_answers
+
+    def parse_question_scores(self, instance_id, questions, student_answers, answers, student):
+        """
+           Processes question scores within a given lesson.
+
+           Questions within each lesson contain a quid (question_id) and a sequence
+           number.
+        """
+        question_info = questions[instance_id]
+        unit_answers = student_answers.get(question_info['unit'], {})
+        lesson_answers = unit_answers.get(question_info['lesson'], {})
+
+        question_desc = None   # Get's filled in later
+
+
+        # answers is the unpacked answers from the Event query
+        for answer in answers:
+#           logging.debug('***RAM*** answer.question.id = ' + str(answer.question_id) + ' type= ' + str(answer.question_type) + ' s= ' + student.email)
+
+        # Count the number of attempts for each answer by the student
+            if not student.email in self.num_attempts_dict:
+                self.num_attempts_dict[student.email] = {}
+
+            if not answer.question_id in self.num_attempts_dict[student.email]:
+                self.num_attempts_dict[student.email][answer.question_id] = 1
+            else:
+                self.num_attempts_dict[student.email][answer.question_id] += 1
+
+#            logging.debug('***RAM*** parse ' + str(answer.unit_id) + ' ' +
+#                 str(answer.lesson_id) + ' ' + str(answer.sequence) + ' score:' + str(answer.score))
+
+            # Create a dict for this answer
+            question_answer_dict = {}
+            question_answer_dict['unit_id'] = answer.unit_id
+            question_answer_dict['lesson_id'] = answer.lesson_id
+            question_answer_dict['sequence'] = answer.sequence
+            question_answer_dict['question_id'] = answer.question_id
+            question_answer_dict['question_desc'] = question_desc
+            question_answer_dict['question_type'] = answer.question_type
+            question_answer_dict['timestamp'] = answer.timestamp
+            question_answer_dict['answers'] = answer.answers
+            question_answer_dict['score'] = answer.score
+            question_answer_dict['weighted_score'] = answer.weighted_score
+            question_answer_dict['tallied'] = answer.tallied
+
+    #        logging.debug('***RAM*** Q ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' unit answer before ' + str(unit_answers))
+    #        logging.debug('***RAM*** McQ ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' answers before ' + str(lesson_answers))
+
+            # If the timestamp on this event is after the timestamp on a previous score do an update
+            if answer.sequence in lesson_answers and lesson_answers[answer.sequence]['timestamp'] < timestamp:
+    #            logging.debug('***RAM*** lesson answers timestamp ' + str(lesson_answers[answer.sequence]) + ' < ' + str(timestamp))
+                lesson_answers[answer.sequence] = question_answer_dict
+            elif answer.sequence not in lesson_answers:
+                lesson_answers[answer.sequence] = question_answer_dict
+    #        logging.debug('***RAM*** McQ ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' answers after ' + str(lesson_answers))
+
+        #  Add scores for this question into the student's activity_scores
+        unit_answers[question_info['lesson']] = lesson_answers
+        student_answers[question_info['unit']] = unit_answers
+        self.activity_scores[student.email] = student_answers
+
     def parse_activity_scores(self, activity_attempt):
         '''
-           Parses activity scores recieved from the mapper.  This is called in
-           the mapper callback function.
+           Processes activity scores recieved from the mapper.
+
+           This is called in the mapper callback function.  Each time a student attempts
+           a GCB question or a Quizly exercise, a tag-assessment Event is created.
+           This processes such events to extract the number of attempts the student
+           made and the answers.
+
+           Events are time-stamped and recorded by user_id. They include the instance_id
+           of the Component that triggered the Event.  Both GCB questions and Quizly
+           exercises have an instance_id.
+
+           However, Quizly exercises don't have question_id and need special processing.
+
+           Use the Dashboard to see what the data looks like for Events:
+           https://console.cloud.google.com/datastore/entities/query?
+               project=ram8647&ns=ns_mobileCSP&kind=EventEntity
         '''
+
         if activity_attempt.source == 'tag-assessment':
             data = transforms.loads(activity_attempt.data)
             instance_id = data['instanceid']
+#            logging.debug('***********RAM************** data[instanceid] = ' + instance_id)
             timestamp = int(
                 (activity_attempt.recorded_on - datetime.datetime(1970, 1, 1)).total_seconds())
 
-            questions = self.params['questions_by_usage_id']          # There are no Quizly exercises here
+            # Get information about the course's questions (doesn't include Quizly exercises yet)
+            questions = self.params['questions_by_usage_id']
             valid_question_ids = self.params['valid_question_ids']
             assessment_weights = self.params['assessment_weights']
             group_to_questions = self.params['group_to_questions']
 
             student = Student.get_by_user_id(activity_attempt.user_id)
 
-            #  Answers so far for this student
+            #  Get this student's answers so far
             student_answers = self.activity_scores.get(student.email, {})
-            logging.warning('***RAM*** student answers = ' + str(student_answers))
+            logging.debug('***RAM*** student answers = ' + str(student_answers))
 
-            answers = event_transforms.unpack_check_answers(               # No Quizly answers here
+            answers = event_transforms.unpack_check_answers(            # No Quizly answers in here
                 data, questions, valid_question_ids, assessment_weights,
                 group_to_questions, timestamp)
 
-            # Add score to right lesson
-
-#            logging.debug('***********RAM************** data[instanceid] = ' + instance_id)
-
+            # Add the score to right lesson
+            # NOTE: This was throwing an exception on Quizly exercises.  Shouldn't happen now
             try: 
                 #  If the event is tag-assessment and has no quid, it's a Quizly exercise
                 if not 'quid' in data:
-#                     logging.warning('***RAM*** A question with instance_id = ' + str(instance_id) +
-#                         ' and no quid and location = ' + str(data['location']))
-                    url = data['location']
-                    quizly_unit_id =  int(url[url.find('unit=') + len('unit=') : url.find('&lesson=')])
-                    quizly_lesson_id = int(url[ url.find('&lesson=') + len('&lesson=') : ])
-                    quizly_score = data['score']   
-                    quizly_answer = data['answer']
-                    quizly_type = 'Quizly'      # reported in data as SaQuestion
-                    quizly_sequence = random.randint(10,30)                  #### Make up a random sequence #
-                    question_answer_dict = {}
-                    question_answer_dict['unit_id'] = quizly_unit_id
-                    question_answer_dict['lesson_id'] = quizly_lesson_id
-                    question_answer_dict['sequence'] = quizly_sequence       # Not given
-                    question_answer_dict['question_id'] = instance_id        # Use instance_id as quid
-                    question_answer_dict['description'] = 'Quizly exercise ' + instance_id
-                    question_answer_dict['question_type'] = quizly_type
-                    question_answer_dict['timestamp'] = timestamp
-                    question_answer_dict['answers'] = [quizly_answer]   # T or F
-                    question_answer_dict['score'] = quizly_score
-                    question_answer_dict['weighted_score'] = quizly_score
-                    question_answer_dict['tallied'] = False
-                    question_answer_dict['choices'] = [{'text':'T','score':1},{'text':'F','score': 0}]   # Quizly's are T/F 
-
-                    # Count the number of attempts for each answer by student
-                    if not student.email in self.num_attempts_dict:
-                        self.num_attempts_dict[student.email] = {}
-                    if not instance_id in self.num_attempts_dict[student.email]:
-                        self.num_attempts_dict[student.email][instance_id] = 1
-                    else:
-                        self.num_attempts_dict[student.email][instance_id] += 1
-
-
-#                    question_info = questions[instance_id]    #   Won't be here for Quizly
-                    unit_answers = student_answers.get(quizly_unit_id, {})
-                    logging.warning('***RAM*** Q ' + str(quizly_unit_id) + ' ' + str(quizly_lesson_id) + ' unit answer before ' + str(unit_answers))
-                    lesson_answers = unit_answers.get(quizly_lesson_id, {})
-                    logging.warning('***RAM*** Q ' + str(quizly_unit_id) + ' ' + str(quizly_lesson_id) + ' answers before ' + str(lesson_answers))
-
-                    # Update the activity scores
-                    found = False
-                    for seq in lesson_answers:
-                        if lesson_answers[seq]['question_id'] == instance_id:      # 
-                            found = True
-                            logging.warning('***RAM*** Quizly found answer for seq = ' + str(seq))
-                            if lesson_answers[seq]['timestamp'] < timestamp:      # Already there check time
-                                question_answer_dict['sequence'] = seq
-                                lesson_answers[seq] = question_answer_dict        # Replace it
-                    if not found:
-                        lesson_answers[quizly_sequence] = question_answer_dict    # Add Quizly 
-                    logging.warning('***RAM*** Q ' + str(quizly_unit_id) + ' ' + str(quizly_lesson_id) + ' answers after ' + str(lesson_answers))
-                                            
-                    unit_answers[quizly_lesson_id] = lesson_answers
-                    student_answers[quizly_unit_id] = unit_answers
-
-                    self.activity_scores[student.email] = student_answers
+                    self.parse_quizly_scores(data, instance_id, timestamp, student, student_answers)
                 else:
-                    question_info = questions[instance_id]
-                    logging.warning('***RAM*** question_info ' + str(questions[instance_id]))
-                    unit_answers = student_answers.get(question_info['unit'], {})
-                    lesson_answers = unit_answers.get(question_info['lesson'], {})
-
-                    question_desc = None
-    #                 if question_info:
-    #                     question_desc = question_info.dict['description']
-
-                    for answer in answers:
-                        # Count the number of attempts for each answer by student
-    #                    logging.debug('***RAM*** answer.question.id = ' + str(answer.question_id) + ' type= ' + str(answer.question_type) + ' s= ' + student.email)
-                        if not student.email in self.num_attempts_dict:
-                            self.num_attempts_dict[student.email] = {}
-
-                        if not answer.question_id in self.num_attempts_dict[student.email]:
-                            self.num_attempts_dict[student.email][answer.question_id] = 1
-                        else:
-                            self.num_attempts_dict[student.email][answer.question_id] += 1
-
-    #                     logging.warning('***RAM*** parse ' + str(answer.unit_id) + ' ' +
-    #                         str(answer.lesson_id) + ' ' + str(answer.sequence) + ' score:' + str(answer.score))
-                        question_answer_dict = {}
-                        question_answer_dict['unit_id'] = answer.unit_id
-                        question_answer_dict['lesson_id'] = answer.lesson_id
-                        question_answer_dict['sequence'] = answer.sequence
-                        question_answer_dict['question_id'] = answer.question_id
-                        question_answer_dict['question_desc'] = question_desc
-                        question_answer_dict['question_type'] = answer.question_type
-                        question_answer_dict['timestamp'] = answer.timestamp
-                        question_answer_dict['answers'] = answer.answers
-                        question_answer_dict['score'] = answer.score
-                        question_answer_dict['weighted_score'] = answer.weighted_score
-                        question_answer_dict['tallied'] = answer.tallied
-
-                        # If the timestamp on this event is after the timestamp on previous score
-                        logging.warning('***RAM*** Q ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' unit answer before ' + str(unit_answers))
-                        logging.warning('***RAM*** McQ ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' answers before ' + str(lesson_answers))
-                        if answer.sequence in lesson_answers and lesson_answers[answer.sequence]['timestamp'] < timestamp:
-                            logging.warning('***RAM*** lesson answers timestamp ' + str(lesson_answers[answer.sequence]) + ' < ' + str(timestamp))
-                            lesson_answers[answer.sequence] = question_answer_dict
-                        elif answer.sequence not in lesson_answers:
-                            lesson_answers[answer.sequence] = question_answer_dict
-                        logging.warning('***RAM*** McQ ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' answers after ' + str(lesson_answers))
-
-                    unit_answers[question_info['lesson']] = lesson_answers
-                    student_answers[question_info['unit']] = unit_answers
-
-                    self.activity_scores[student.email] = student_answers
+                    self.parse_question_scores(instance_id, questions, student_answers, answers, student)
             except Exception as e:
                 logging.error('***********RAM************** bad instance_id: %s %s\n%s', str(instance_id), e, traceback.format_exc())
 #        logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
@@ -249,7 +301,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
             if 'choices' in question_info.dict:
                 choices = question_info.dict['choices']
 
-#                logging.warning('***RAM*** choices = ' + str(choices))
+#                logging.debug('***RAM*** choices = ' + str(choices))
 
                 # Calculate total possible points for questions by iterating
                 # through the answer choices and summing their individual values.
@@ -267,7 +319,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     # We don't need the questions and answers text.
                     choices_scores_only.append( {'score': choice['score'], 'text': chr(ord('A') + i) } )
                     i = i + 1
-#                logging.warning('***RAM*** scores only = ' + str(choices_scores_only))
+#                logging.debug('***RAM*** scores only = ' + str(choices_scores_only))
 
             elif 'graders' in question_info.dict:
                 choices = question_info.dict['graders']
@@ -282,7 +334,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
         #   construct a partial question_answer_dict with default values.  Otherwise
         #   fill in the existing dict with values from the student's question_answer.
         if not question_answer:
-#             logging.warning('***RAM*** Initializing dict for ' +
+#             logging.debug('***RAM*** Initializing dict for ' +
 #                 str(unit_id) + ' ' + str(lesson_id) + ' ' + str(sequence))
             question_answer_dict = {}
             question_answer_dict['unit_id'] = unit_id
@@ -304,7 +356,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
             lesson = unit.get(lesson_id, {})
             lesson[sequence] = question_answer_dict
         else:
-#             logging.warning('***RAM*** Updating dict for ' +
+#             logging.debug('***RAM*** Updating dict for ' +
 #                 str(question_answer['unit_id']) + ' ' + str(question_answer['lesson_id']) + ' ' + str(question_answer['sequence']) 
 #                 + ' score=' + str(question_answer['score']))
             question_answer_dict = {}
@@ -355,12 +407,12 @@ class ActivityScoreParser(jobs.MapReduceJob):
     def get_student_completion_data(cls, course):
         """Retrieves student completion data for the course."""
 
-#        logging.warning('***RAM*** get_student_completion_data ' + str(course))
+#        logging.debug('***RAM*** get_student_completion_data ' + str(course))
         completion_tracker = UnitLessonCompletionTracker(course)
         questions_dict = completion_tracker.get_id_to_questions_dict()
 #         for q in questions_dict:
-#             logging.warning('***RAM*** key: ' + q)
-#             logging.warning('***RAM*** dict ' + str(questions_dict[q]))
+#             logging.debug('***RAM*** key: ' + q)
+#             logging.debug('***RAM*** dict ' + str(questions_dict[q]))
 
     @classmethod
     def get_activity_scores(cls, student_user_ids, course, force_refresh = True):
@@ -399,13 +451,13 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
             #  Launch a background Query for each student's activity data.  This is expensive.
             for user_id in student_user_ids:
-#                 logging.warning('***RAM*** launching a query for student ' + str(user_id))
+#                 logging.debug('***RAM*** launching a query for student ' + str(user_id))
                 mapper = models_utils.QueryMapper(
                     EventEntity.all().filter('user_id in', [user_id]), batch_size=1000, report_every=1000)
 
                 # Callback function -- e.g., 45-50 callbacks per query
                 def map_fn(activity_attempt):
-#                    logging.warning('***RAM*** map_fn ' + str(activity_attempt))
+#                    logging.debug('***RAM*** map_fn ' + str(activity_attempt))
                     activityParser.parse_activity_scores(activity_attempt)
 
                 mapper.run(map_fn)
