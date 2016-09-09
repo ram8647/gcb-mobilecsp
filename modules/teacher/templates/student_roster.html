@@ -117,6 +117,7 @@
      */
     $(function() {
       $('.unit-select').change(function() {
+        clear_questions_table(document.getElementById('questions-table'));
         var newOptions = [];
         if (this.value != 'course_completion') {
           document.getElementById('course-unit-progress-heading').innerHTML = '<span class="hover help yui-wk-div" data-id="unit">Unit Progress %</span>';
@@ -222,15 +223,18 @@
     }
 
 
-    // Creates a table of all the questions in a given lesson.
-    // With a break down by answers given by students
-    function get_questions_table(unit_id, lesson_id) {
+    function clear_questions_table(table) {
       // Get and clear the table
-      var table = document.getElementById('questions-table');
       while (table.firstChild) {
         table.removeChild(table.firstChild);
       }
+    }
 
+    // Creates a table of all the questions in a given lesson.
+    // With a break down by answers given by students
+    function get_questions_table(unit_id, lesson_id) {
+      var table = document.getElementById('questions-table');
+      clear_questions_table(table);
       var questions_arr = construct_questions_table(unit_id, lesson_id);
       if (questions_arr == {})
         return;
