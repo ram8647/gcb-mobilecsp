@@ -267,25 +267,34 @@ class TeacherDashboardHandler(
 
             The template is injected with a list of this teacher's sections.
         """
-        # Make sure the user is a registered teacher
+        # Make sure the user is registered and a registered teacher
+        # If not redirect to main course page
         alerts = []
+        user_email = ''
         disable = False
-        user_email = users.get_current_user().email()
-        if not self.is_registered_teacher(user_email):
-            alerts.append('Access denied. Please see a course admin.')
+        if not users.get_current_user():
+            alerts.append('Access denied. Only registered teachers can use this feature.')
             disable = True
+        else:        
+            user_email = users.get_current_user().email()
+            if not self.is_registered_teacher(user_email):
+                alerts.append('Access denied. Please see a course admin.')
+                disable = True
 
-        sections = CourseSectionEntity.get_sections()
-        sections = TeacherRights.apply_rights(self, sections)
+        if disable:
+            self.redirect('/course')
+        else:
+            sections = CourseSectionEntity.get_sections()
+            sections = TeacherRights.apply_rights(self, sections)
 
-        logging.debug('***RAM*** Trace: get_edit_sections')
+            logging.debug('***RAM*** Trace: get_edit_sections')
 
-        # self._render will render the SECTIONS template
-        self.template_value['teacher'] = self.format_dashboard_template(sections, user_email)
-        self.template_value['teacher_email'] = user_email
-        self.template_value['alerts'] = alerts
-        self.template_value['disabled'] = disable
-        self._render()
+            # self._render will render the SECTIONS template
+            self.template_value['teacher'] = self.format_dashboard_template(sections, user_email)
+            self.template_value['teacher_email'] = user_email
+            self.template_value['alerts'] = alerts      # Not really used anymore
+            self.template_value['disabled'] = disable   # Not really used anymore
+            self._render()
 
     def get_add_section(self):
         """ Shows an editor for a section entity.
