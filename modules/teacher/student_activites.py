@@ -283,56 +283,6 @@ class ActivityScoreParser(jobs.MapReduceJob):
             # Add the score to right lesson
             # NOTE: This was throwing an exception on Quizly exercises.  Shouldn't happen now
             try: 
-<<<<<<< HEAD
-                question_info = questions[instance_id]
-                unit_answers = student_answers.get(question_info['unit'], {})
-                lesson_answers = unit_answers.get(question_info['lesson'], {})
-
-                question_desc = None
-#                 if question_info:
-#                     question_desc = question_info.dict['description']
-                             
-                for answer in answers:
-                    # Counts the number of attempts for each answer by student
-#                    logging.debug('***RAM*** answer.question.id = ' + str(answer.question_id) + ' type= ' + str(answer.question_type) + ' s= ' + student.email)
-                    if not student.email in self.num_attempts_dict:
-                        self.num_attempts_dict[student.email] = {}
-
-                    if not answer.question_id in self.num_attempts_dict[student.email]:
-                        self.num_attempts_dict[student.email][answer.question_id] = 1
-                    else:
-                        self.num_attempts_dict[student.email][answer.question_id] += 1
-
-                    logging.warning('***RAM*** parse ' + str(answer.unit_id) + ' ' +
-                        str(answer.lesson_id) + ' ' + str(answer.sequence) + ' score:' + str(answer.score))
-                    question_answer_dict = {}
-                    question_answer_dict['unit_id'] = answer.unit_id
-                    question_answer_dict['lesson_id'] = answer.lesson_id
-                    question_answer_dict['sequence'] = answer.sequence
-                    question_answer_dict['question_id'] = answer.question_id
-                    question_answer_dict['question_desc'] = question_desc
-                    question_answer_dict['question_type'] = answer.question_type
-                    question_answer_dict['timestamp'] = answer.timestamp
-                    question_answer_dict['answers'] = answer.answers
-                    question_answer_dict['score'] = answer.score
-                    question_answer_dict['weighted_score'] = answer.weighted_score
-                    question_answer_dict['tallied'] = answer.tallied
-
-                    # If the timestamp on this event is after the timestamp on previous score
-                    if answer.sequence in lesson_answers and lesson_answers[answer.sequence]['timestamp'] < timestamp:
-                        lesson_answers[answer.sequence] = question_answer_dict
-                    elif answer.sequence not in lesson_answers:
-                        lesson_answers[answer.sequence] = question_answer_dict
-
-                unit_answers[question_info['lesson']] = lesson_answers
-                student_answers[question_info['unit']] = unit_answers
-
-                self.activity_scores[student.email] = student_answers
-            except:
-                logging.warning('***********RAM************** bad instance_id ' + instance_id +
-                    ' This may be a quizly question.')
-#                logging.debug('***RAM*** num_attempts_dict ' + str(self.num_attempts_dict))
-=======
                 #  If the event is tag-assessment and has no quid, it's a Quizly exercise
                 if not 'quid' in data:
                     self.parse_quizly_scores(data, instance_id, timestamp, student, student_answers)
@@ -340,7 +290,6 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     self.parse_question_scores(instance_id, questions, student_answers, answers, student)
             except Exception as e:
                 logging.error('***********RAM************** bad instance_id: %s %s\n%s', str(instance_id), e, traceback.format_exc())
->>>>>>> quizly
 #        logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
         return self.activity_scores
 
