@@ -34,6 +34,24 @@ class ActivityScoreParser(jobs.MapReduceJob):
         self.activity_scores = { }
         self.params = {}
         self.num_attempts_dict = { }
+        self.quizly_desc = {               # instance_id:description
+            'LXgF4NO50hNM':'Pause the Player',       # Unit 2
+            'BtQ8hSoGkeml':'Stop the Player',
+            'Dstsv7VuDQb5':'Stop Player if playing',
+            'twxBgieSEwqs':'If/else stop/start Player', 
+            'a3uBZXYSOJee':'Set background color',   # Unit 3
+            'pnhvzarYPPW1':'Set text color',
+            'G3qzTftPYKTe':'Increment a variable',
+            '4kITN7u5hdsO':'Initialize global variable',
+            'pCZugPUxlHeb':'Initializing',
+            '8T30OkUf5r1r':'Simple if/else',
+            'KQctST8skmaC':'Procedure to double a variable',
+            'v2m4Ks25S1MX':'Procedure to add globals',
+            'rCgLbJRceEbn':'Procedure to reset the score',          # Unit 4   
+            '7uowepixSjT4':'Procedure to calculate the hit rate',
+            'w18q4UWKxvlM':'Fix a bug in updateScore procedure',
+            'rvjUJMaLZ56s':'If/else greater than',
+        }
 
     @staticmethod
     def get_description():
@@ -118,7 +136,10 @@ class ActivityScoreParser(jobs.MapReduceJob):
          question_answer_dict['lesson_id'] = quizly_lesson_id
          question_answer_dict['sequence'] = quizly_sequence       # Not given
          question_answer_dict['question_id'] = instance_id        # Use instance_id as quid
-         question_answer_dict['description'] = 'Quizly exercise ' + instance_id
+         if instance_id in self.quizly_desc:
+             question_answer_dict['description'] = 'Quizly ' + self.quizly_desc[instance_id]
+         else:
+             question_answer_dict['description'] = 'Quizly ' + instance_id
          question_answer_dict['question_type'] = quizly_type
          question_answer_dict['timestamp'] = timestamp
          question_answer_dict['answers'] = [quizly_answer]   # T or F
