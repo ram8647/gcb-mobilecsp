@@ -29,15 +29,20 @@
 <!--   <link rel="stylesheet" type="text/css" href="{{resources_path}}/css/tipped.css" /> -->
 <!--   <script src="{{resources_path}}/js/tipped.js"></script> -->
   <script>
-    // Script for adding hovers to some elements on the page.
+    // Script to initialize the page when ready
     $(document).ready(function() {
+
+      // Setup hovers
       Tipped.create('.help', function(element) {
-    var help = $(element).data('id');
-    return documentation[help];
-        }, {
-          cache: false,
+        var help = $(element).data('id');
+        return documentation[help];
+      }, {
+            cache: false,
             position: 'topleft'
-            });
+         });
+
+      // Initilize the modal window -- is this used?
+      setUpModalWindow();
     });
   
     var documentation = { 
@@ -50,12 +55,35 @@
       "unitselect": "Choose an option here to see student performance for a particular unit.",
       "lessonselect": "After choosing a unit option choose an option here to see student performance for a particular lesson.",
     };
+
+
+    /*
+     * Resets the page when navigated to via Back button
+     */  
+    $(window).bind("pageshow", function() {
+      // Initialize drop-downs for unit and lesson.
+      clear_questions_table(document.getElementById('questions-table'));
+      var unit_select = document.getElementById('unit-select-widget');
+      {% if units %}
+        var opt = document.createElement('option');
+        opt.value = 'course_completion';
+        opt.innerHTML = 'Course';
+        unit_select.appendChild(opt);
+        {% for unit in units %}
+          {% if unit.type == 'U' %}
+            opt.value = '{{ unit.unit_id }}';
+            opt.innerHTML = '{{ unit.title }}';
+            unit_select.appendChild(opt);
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      unit_select.value = 'course_completion';
+      var lesson_select = document.getElementById('lesson-select-widget');
+      lesson_select.options[lesson_select.selectedIndex].value = 'N/A';
+      lesson_select.innerHTML = 'N/A';
+    });
   </script>
-  <script>
-    $(document).ready(function() {
-        setUpModalWindow();
-     });
-  </script>
+
   <script type="text/javascript">
     /*
      *  Retrieve the quiz performance ratio for a given unit and lesson.
@@ -223,6 +251,7 @@
     }
 
 
+    // Clears the question table
     function clear_questions_table(table) {
       // Get and clear the table
       while (table.firstChild) {
