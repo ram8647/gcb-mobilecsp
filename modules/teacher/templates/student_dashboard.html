@@ -18,8 +18,38 @@
   <!-- BUG:  This should go into modules/teacher/resources/css but it doesn't work there. -->
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/student_progress.css" />
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/question_preview.css" /> 
+  <link rel="stylesheet" type="text/css" href="assets/lib/lessons/tipped.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
   <script type="text/javascript" src="assets/lib/lessons/modal-window.js"></script>
+  <script src="assets/lib/lessons/tipped.js"></script>
+
+  <script>
+    // Script to initialize the page when ready
+    $(document).ready(function() {
+
+      // Setup hovers
+      Tipped.create('.help', function(element) {
+        var help = $(element).data('id');
+        return documentation[help];
+      }, {
+            cache: false,
+            position: 'topleft'
+         });
+
+      // Initilize the modal window -- is this used?
+      setUpModalWindow();
+    });
+  
+    var documentation = { 
+       "course-completion": "Displays the percentage of the course (units and lessons) completed by this student.",
+       "unit-completion": "When a unit is selected, displays the percentage of that unit completed by the student.",
+       "unitselect": "Select a unit to see the lessons within the unit, then click on a lesson.",
+       "lesson-title": "Click on a lesson title to see details of the student's performance on a lesson.",
+       "progess": "Lesson progress is either 'Completed', 'In progress' or 'Not started'.",
+       "scores": "Hover on the question title (e.g, Q1) to see a description of the question. The eye-icon brings up the lesson containing these questions.",
+    };
+  </script>
+
   <script>
      function hasClass(elem, className) {
        return elem.className.split(' ').indexOf(className) > -1;
@@ -34,11 +64,12 @@
         // Update the student table with data for the selected unit
         var newOptions = [];
         if (this.value == 'course_completion') {
-          document.getElementById('student-unit-completion').innerHTML = '<b>Unit Completion: </b>' + 'N/A';
+          document.getElementById('student-unit-completion').innerHTML = '<span class="hover help yui-wk-div" data-id="unit-completion"><b>Unit Completion: </b></span>' + 'N/A';
           document.getElementById('progress-unit-completion').value = 0;
           document.getElementById('progress-unit-completion').width = 0;
         } else {
-          document.getElementById('student-unit-completion').innerHTML = '<b>Unit Completion: </b>' + studentJs['progress_dict']['unit_completion'][this.value] + ' %';
+          document.getElementById('student-unit-completion').innerHTML = '<span class="hover help yui-wk-div" data-id="unit-completion"><b>Unit Completion: </b></span>' 
+            + studentJs['progress_dict']['unit_completion'][this.value] + ' %';
           document.getElementById('progress-unit-completion').value = studentJs['progress_dict']['unit_completion'][this.value] / 100;
           document.getElementById('progress-unit-completion').width = studentJs['progress_dict']['unit_completion'][this.value] / 100;
           var lessons = lessonsObject[this.value];
@@ -59,11 +90,13 @@
         }
         var row = table.insertRow(0);
         var cell = row.insertCell(0);
-        cell.innerHTML = "<b>Lesson title</b>";
+        cell.innerHTML = '<span class="hover help yui-wk-div" data-id="lesson-title"><label><b>Lesson title</b></label></span>';
+<!--         cell.setAttribute("class", "hover help yui-wk-div"); -->
+<!--         cell.setAttribute("data-id", "lesson-title"); -->
         cell = row.insertCell(1);
-        cell.innerHTML = "<b>Progress</b>";
+        cell.innerHTML = '<span class="hover help yui-wk-div" data-id="progress"><b>Progress</b></span>';
         row.insertCell(2).innerHTML = "";;
-        row.insertCell(3).innerHTML = "<b>Scores</b>";;
+        row.insertCell(3).innerHTML = '<span class="hover help yui-wk-div" data-id="scores"><b>Scores</b></span>';
         for (var k = 0; k < lessons.length; k++) {
            var lid = lessons[k]['lesson_id'];
            var uid = lessons[k]['unit_id'];
@@ -269,11 +302,6 @@
        }
     }
   </script>
-  <script>
-    $(document).ready(function() {
-        setUpModalWindow();
-     });
-  </script>
 {% else %}
   <script>
       cbShowMsg('Invalid student email {{ student_email }}');
@@ -291,6 +319,15 @@
      <button class="gcb-button" style="align:right;" type="submit" onclick="window.history.back()" >Back to Roster</button>   
    </td>
   </tr>
+  <tr>
+   <td>
+     By selecting a unit and then selecting lessons within units you can see detailed information on this student's progress and performance.
+     Click here for <a target="_blank" href="https://docs.google.com/document/d/1XKGfVl_tQDGF0JPQFKh-PKiVKkn5Qu3LOZEJEzpjoaY">additional instructions and documentation</a>.
+   </td>
+   <td>
+     &nbsp;
+   </td>
+  </tr>
  </tbody>
  </table>
     <div class="student-detail" style="margin: 5px;">
@@ -298,7 +335,7 @@
        <table>
         <tr>
         <td>
-          <label class="student-course-completion"><b>Course Completion: </b>{{ student.progress_dict.course_progress }} %</label>
+          <label class="student-course-completion"><span class="hover help yui-wk-div" data-id="course-completion"><b>Course Completion: </b></span> {{ student.progress_dict.course_progress }} %</label>
         </td>
         <td>
           <progress class="student-course-progress" value="{{ student.progress_dict.course_progress|int / 100 }}">
@@ -310,7 +347,7 @@
          </td>
          <td>&nbsp;&nbsp;</td>
          <td>
-          <label id="student-unit-completion"><b>Unit Completion: </b>N/A</label>
+          <span class="hover help yui-wk-div" data-id="unit-completion"><label id="student-unit-completion"><b>Unit Completion: </b>N/A</label></span> 
         </td>
         <td>
           <progress id="progress-unit-completion" class="student-unit-progress" value="0">
@@ -334,7 +371,7 @@
 
       <tr>
           <td>
-           <span class="hover help yui-wk-div" data-id="unitselect"><label><b>Unit: </b></label></span>
+           <span class="hover help yui-wk-div" data-id="unitselect"><label><b>Select a Unit: </b></label></span>
            <select id="unit-select-widget"  class="unit-select">
               <option value="course_completion">Course</option>
               {% if units %} 
