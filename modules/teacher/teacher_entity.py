@@ -30,6 +30,7 @@ from models import resources_display
 from models import roles
 from models import transforms
 from models.models import MemcacheManager
+from models.models import Student
 
 # In our module
 import messages
@@ -40,14 +41,12 @@ class TeacherEntity(entities.BaseEntity):
     enrolled_on = db.DateProperty()
     is_enrolled = db.BooleanProperty(indexed=False)
     is_active = db.BooleanProperty(indexed=False)
-    additional_fields = db.TextProperty(indexed=False)
 
     user_id = db.StringProperty(indexed=True)
     name = db.StringProperty(indexed=False)
     date = db.DateProperty()
-    email = db.TextProperty(indexed=False)
+    email = db.StringProperty(indexed=True)
     school = db.TextProperty(indexed=False)
-    labels = db.StringProperty(indexed=False)
 
     # Additional field for teachers
     sections = db.TextProperty(indexed=False)
@@ -160,8 +159,6 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         schema.add_property(schema_fields.SchemaField(
             'school', 'School', 'string',
             description=messages.TEACHER_SCHOOL_DESCRIPTION))
-        resources_display.LabelGroupsHelper.add_labels_schema_fields(
-            schema, 'teacher')
         return schema
 
     def get(self):
@@ -194,10 +191,6 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         date = entity_dict['date']
         date = datetime.datetime(date.year, date.month, date.day)
         entity_dict['date'] = date
-
-        entity_dict.update(
-            resources_display.LabelGroupsHelper.labels_to_field_data(
-                common_utils.text_to_list(entity.labels)))
 
         json_payload = transforms.dict_to_json(entity_dict)
         transforms.send_json_response(
@@ -232,10 +225,25 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         update_dict = transforms.json_to_dict(
             transforms.loads(payload), schema.get_json_schema_dict())
 
-        entity.labels = common_utils.list_to_text(
-            resources_display.LabelGroupsHelper.field_data_to_labels(
-                update_dict))
-        resources_display.LabelGroupsHelper.remove_label_field_data(update_dict)
+        #  Get the teacher's user_id
+        user = Student.get_first_by_email(update_dict['email'])[0]  # returns a tuple
+        if not user:
+            transforms.send_json_response(
+                self, 404, 'MobileCSP: No registered user found for ' + update_dict['email'], {'key': key})
+            return
+
+        # Check that the teacher isn't already registered
+        teachers = TeacherEntity.get_teachers()
+        for teacher in teachers:
+            if teacher.email == update_dict['email']:
+                transforms.send_json_response(
+                    self, 404, 'MobileCSP: User is already registered as a teacher ' + update_dict['email'], {'key': key})
+                return
+
+#        logging.debug('****RAM**** teacher id ' + str(user.user_id))
+
+        # Store the user_id
+        update_dict['user_id'] = user.user_id
 
         transforms.dict_to_entity(entity, update_dict)
 
