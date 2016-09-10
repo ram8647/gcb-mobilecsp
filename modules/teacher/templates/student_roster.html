@@ -79,7 +79,6 @@
       {% endif %}
       unit_select.value = 'course_completion';
       var lesson_select = document.getElementById('lesson-select-widget');
-      lesson_select.options[lesson_select.selectedIndex].value = 'N/A';
       lesson_select.innerHTML = 'N/A';
     });
   </script>
@@ -184,6 +183,7 @@
     $(function() {
       $('.lesson-select').change(function() {
         if ($(this).val() !== 'NA') {
+          clear_questions_table(document.getElementById('questions-table'));
           var sel = document.getElementById('unit-select-widget');
           var unit_id = sel.options[sel.selectedIndex].value;
           update_section_stats(unit_id, this.value);
@@ -264,30 +264,37 @@
     function get_questions_table(unit_id, lesson_id) {
       var table = document.getElementById('questions-table');
       clear_questions_table(table);
-      var questions_arr = construct_questions_table(unit_id, lesson_id);
-      if (questions_arr == {})
+      var questions_dict = construct_questions_table(unit_id, lesson_id);
+      var x = document.getElementById('lesson-select-widget').selectedIndex;
+      if (Object.keys(questions_dict).length === 0) {
+        table.createCaption();
+        table.innerHTML = '<b>Currently there are no questions and answers to display for lesson: ' + 
+         document.getElementById('lesson-select-widget').options[x].innerHTML + '</b>';
         return;
+      }
 
+      // Set the table title
+      table.createCaption();
+      table.innerHTML = '<b>Aggregate Class Peformance on ' + 
+         document.getElementById('lesson-select-widget').options[x].innerHTML + '</b>';
       // Row 0 is for the headings
       var row = table.insertRow(0);
-      var x = document.getElementById('lesson-select-widget').selectedIndex;
-      row.insertCell(0).innerHTML = '<b>Aggregate Class Peformance on <br /> Questions for<br />' + 
-         document.getElementById('lesson-select-widget').options[x].innerHTML + '</b>';
-      row.insertCell(1).innerHTML = '<b>Average Score</b>';
+      row.insertCell(0).innerHTML =  '<b> Questions</b>';
+      row.insertCell(1).innerHTML = '<b>Average Scores</b>';
 
       for (var i = 0; i < 6; i++) {
         row.insertCell(i+2).innerHTML = '<b>Choice ' + (i+1) + '</b>';
       }
       var j = 1;  // Table row index
-      for (var question in questions_arr) {
-         var description = questions_arr[question]['description'];
+      for (var question in questions_dict) {
+         var description = questions_dict[question]['description'];
          var row = table.insertRow(j++);
          row.insertCell(0).innerHTML = "<div style='color:blue;' >"  +
              "<a target='_blank' class='zmdi zmdi-eye'" + 
              " href=https://mobilecsp-201608.appspot.com/mobilecsp/unit?unit=" + unit_id + "&lesson=" + lesson_id + "> " + description + "</a></div>";
          row.insertCell(1).innerHTML = "TBD";
          var k = 2;
-         var choices = questions_arr[question]['choices'];
+         var choices = questions_dict[question]['choices'];
          for (choice in choices) {
            var cell = row.insertCell(k++);
            cell.innerHTML = choices[choice]['counter'];
