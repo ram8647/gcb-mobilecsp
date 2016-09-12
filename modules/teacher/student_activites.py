@@ -177,7 +177,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
          student_answers[quizly_unit_id] = unit_answers
          self.activity_scores[student.email] = student_answers
 
-    def parse_question_scores(self, instance_id, questions, student_answers, answers, student):
+    def parse_question_scores(self, instance_id, questions, student_answers, answers, student, timestamp):
         """
            Processes question scores within a given lesson.
 
@@ -274,7 +274,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
             #  Get this student's answers so far
             student_answers = self.activity_scores.get(student.email, {})
-            logging.debug('***RAM*** student answers = ' + str(student_answers))
+#            logging.debug('***RAM*** student answers = ' + str(student_answers))
 
             answers = event_transforms.unpack_check_answers(            # No Quizly answers in here
                 data, questions, valid_question_ids, assessment_weights,
@@ -287,7 +287,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 if not 'quid' in data:
                     self.parse_quizly_scores(data, instance_id, timestamp, student, student_answers)
                 else:
-                    self.parse_question_scores(instance_id, questions, student_answers, answers, student)
+                    self.parse_question_scores(instance_id, questions, student_answers, answers, student, timestamp)
             except Exception as e:
                 logging.error('***********RAM************** bad instance_id: %s %s\n%s', str(instance_id), e, traceback.format_exc())
 #        logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
