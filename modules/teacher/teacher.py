@@ -454,26 +454,29 @@ class TeacherDashboardHandler(
                 scores[unit][lesson]['ratio'] = str(n_correct) + "/" + str(n_questions)
         return scores
 
-    def create_student_table(self, email, course, tracker, units):
+    def create_student_table(self, email, course, tracker, units, get_scores=False):
         student_dict = {}
         student = Student.get_first_by_email(email)[0]  # returns a tuple
         if student:
             progress_dict = self.calculate_student_progress_data(student,course,tracker,units)
-            scores = self.retrieve_student_scores_and_attempts(email, course)
-            student_dict['attempts'] = scores['attempts']
+            if get_scores:
+                scores = self.retrieve_student_scores_and_attempts(email, course)
+                student_dict['attempts'] = scores['attempts']
 #                    student_dict['scores'] = scores['scores']
-            student_dict['scores'] = self.calculate_performance_ratio(scores['scores'], email)
+                student_dict['scores'] = self.calculate_performance_ratio(scores['scores'], email)
             student_dict['name'] = student.name
             student_dict['email'] = student.email
             student_dict['progress_dict'] = progress_dict
+            student_dict['has_scores'] = get_scores
         return student_dict
 
     def create_student_data_table(self, course, section, tracker, units, student_email = None):
         """ Creates a lookup table containing all student progress data 
             for every unit, lesson, and quiz. 
         """
+        # If called from get_student_dashboad to get stats for a single student
         if student_email:
-            return self.create_student_table(student_email, course, tracker, units)
+            return self.create_student_table(student_email, course, tracker, units, get_scores=True)
 
         if section.students:
             index = section.students.split(',')   # comma-delimited emails
@@ -484,7 +487,7 @@ class TeacherDashboardHandler(
         students = []
         if len(index) > 0:
             for email in index:
-                student_dict = self.create_student_table(email, course, tracker, units)
+                student_dict = self.create_student_table(email, course, tracker, units, get_scores=False)
                 if student_dict:
                     students.append(student_dict)
         return students

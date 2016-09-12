@@ -94,11 +94,13 @@
      */
     function get_quiz_ratio(student, unit, lesson) {
       var ratio = "N/A";
+      {% if has_scores %}
       if (student['scores'][unit]) {
         if (student['scores'][unit][lesson]) {
           ratio = student['scores'][unit][lesson]['ratio'];
         }
       }
+      {% endif %}
       return ratio;
     }
 
@@ -116,8 +118,10 @@
          var unit_cell = document.getElementById('student-unit-progress-cell-' + (i+1)); // table cells are 1-indexed
          var lesson_cell = document.getElementById('student-lesson-progress-cell-' + (i+1)); // table cells are 1-indexed
          var quizzes_cell = document.getElementById('student-quizzes-cell-' + (i+1)); // table cells are 1-indexed
-         var quiz_ratio = get_quiz_ratio(student, unit_id,lesson_id);
-         quizzes_cell.innerHTML = quiz_ratio;
+         {% if has_scores %}
+           var quiz_ratio = get_quiz_ratio(student, unit_id,lesson_id);
+           quizzes_cell.innerHTML = quiz_ratio;
+         {% endif %}
          if (unit_id != 'course_completion') {
            unit_cell.innerHTML = student['progress_dict']['unit_completion'][unit_id]
            if (lesson_id != "NA") {
@@ -187,7 +191,9 @@
           var sel = document.getElementById('unit-select-widget');
           var unit_id = sel.options[sel.selectedIndex].value;
           update_section_stats(unit_id, this.value);
-          get_questions_table(unit_id, this.value);
+          {% if has_scores %}
+            get_questions_table(unit_id, this.value);
+          {% endif %}
         }
       });
     });
@@ -400,7 +406,9 @@
             <th class="gcb-list__cell--icon">Email</th>
             <th id="course-unit-progress-heading" class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="course">Course/Unit Progress %</span></th>
             <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="lesson">Lesson Progress</span></th>
+            {% if has_scores %}
             <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="quiz">Question Progress</span></th>
+            {% endif %}
            </tr>
           </thead>
           <tbody> 
@@ -423,9 +431,11 @@
              <td id="student-lesson-progress-cell-{{loop.index}}">
                N/A
              </td> 
-             <td id="student-quizzes-cell-{{loop.index}}">
-               N/A
-             </td> 
+             {% if has_scores %}
+               <td id="student-quizzes-cell-{{loop.index}}">
+                 N/A
+               </td> 
+             {% endif %}
             </tr>
            {% endfor %}
           </tbody>
