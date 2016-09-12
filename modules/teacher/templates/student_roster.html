@@ -147,7 +147,7 @@
         clear_questions_table(document.getElementById('questions-table'));
         var newOptions = [];
         if (this.value != 'course_completion') {
-          document.getElementById('course-unit-progress-heading').innerHTML = '<span class="hover help yui-wk-div" data-id="unit">Unit Progress %</span>';
+<!--           document.getElementById('course-unit-progress-heading').innerHTML = '<span class="hover help yui-wk-div" data-id="unit">Unit Progress %</span>'; -->
           var lessons = lessonsObject[this.value];
           for (var i =0; i < lessons.length; i++) {
             newOptions.push({
@@ -156,7 +156,7 @@
             });
           }
         } else {
-          document.getElementById('course-unit-progress-heading').innerHTML = '<span class="hover help yui-wk-div" data-id="course">Course Progress %</span>';
+<!--           document.getElementById('course-unit-progress-heading').innerHTML = '<span class="hover help yui-wk-div" data-id="course">Course Progress %</span>'; -->
           newOptions.push({
             key: 'NA',
             value: 'N/A'
@@ -398,7 +398,7 @@
             <th class="gcb-list__cell--icon"></th>
             <th class="gcb-list__cell--icon">Name</th>
             <th class="gcb-list__cell--icon">Email</th>
-            <th id="course-unit-progress-heading" class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="course">Course Progress %</span></th>
+            <th id="course-unit-progress-heading" class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="course">Course/Unit Progress %</span></th>
             <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="lesson">Lesson Progress</span></th>
             <th class="gcb-list__cell--icon"><span class="hover help yui-wk-div" data-id="quiz">Question Progress</span></th>
            </tr>
