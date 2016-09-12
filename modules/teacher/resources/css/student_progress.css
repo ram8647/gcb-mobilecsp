@@ -1,7 +1,7 @@
 /* This sizes the progress bars on the page */
 progress[value] {
-  width: 250px;
-  height: 20px;
+  width: 125px;
+  height: 10px;
   margin-top: 3px;
 
   /* Reset the default appearance */
@@ -29,8 +29,8 @@ progress[value]::-webkit-progress-bar {
   border-radius: 2px;
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25) inset;
 
-  width: 250px;
-  height: 20px;
+  width: 125px;
+  height: 10px;
 
   position: relative;
   display: block;
