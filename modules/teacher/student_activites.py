@@ -29,6 +29,10 @@ class ActivityScoreParser(jobs.MapReduceJob):
         query the Events database, extract tag-assessment events and
         process them.
     """
+
+    CUTOFF_DATE = datetime.datetime(2016,6,1)
+
+
     def __init__(self):
         """holds activity score info unit -> lesson -> question"""
         self.activity_scores = { }
@@ -474,7 +478,9 @@ class ActivityScoreParser(jobs.MapReduceJob):
             for user_id in student_user_ids:
 #                 logging.debug('***RAM*** launching a query for student ' + str(user_id))
                 mapper = models_utils.QueryMapper(
-                    EventEntity.all().filter('user_id in', [user_id]), batch_size=1000, report_every=1000)
+                    EventEntity.all().filter('user_id in', [user_id])       \
+                                     .filter('recorded_on  >= ', cls.CUTOFF_DATE), \
+                                        batch_size=1000, report_every=1000)
 
                 # Callback function -- e.g., 45-50 callbacks per query
                 def map_fn(activity_attempt):
@@ -522,7 +528,9 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
                 for user_id in uncached_students:
                     mapper = models_utils.QueryMapper(
-                        EventEntity.all().filter('user_id in', [user_id]), batch_size=500, report_every=1000)
+                        EventEntity.all().filter('user_id in', [user_id])       \
+                                     .filter('recorded_on  >= ', cls.CUTOFF_DATE), \
+                                        batch_size=1000, report_every=1000)
 
                     def map_fn(activity_attempt):
                         activityParser.parse_activity_scores(activity_attempt)
