@@ -16,11 +16,6 @@ indexes:
 - kind: EventEntity
   properties:
   - name: user_id
-  - name: DateTimeUTC
-
-- kind: EventEntity
-  properties:
-  - name: user_id
   - name: recorded_on
 
 - kind: Notification
