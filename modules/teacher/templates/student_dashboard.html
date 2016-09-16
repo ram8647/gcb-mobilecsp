@@ -301,27 +301,36 @@
         var el = document.getElementById("Q" + id);
         el.setAttribute('quid', id);
         var type = el.getAttribute('type');
-        var url = '';
-        var quid = 0;
         if (type != 'Quizly') {
-           url = "https://ram8647.appspot.com/mobileCSP/assets/lib/quizly/gcb-index.html?backpack=hidden&selector=hidden&quizname=" +
-               attempts_array[i][5];
-        } else {
-           quid = this.getAttribute('quid'),
-        }
-        el.onclick = function() {  // Open a modal iframe to display the question
-          openModal();
-          modal = document.getElementById('question-preview');
-          modal.style.visibility = 'visible';
-          var params = {
-		action: 'question_preview',
-		quid: quid
-		url: url
-          };
-           $('#question-preview').html($('<iframe />').attr(
-             {src: 'teacher?' + $.param(params)})).show(); 
+	   el.onclick = function() {  // Open a modal iframe to display the question
+             openModal();
+             modal = document.getElementById('question-preview');
+             modal.style.visibility = 'visible';
+             var params = {
+               action: 'question_preview',
+               quid: this.getAttribute('quid'),
+               url: ''
+             };
+             $('#question-preview').html($('<iframe />').attr(
+               {src: 'teacher?' + $.param(params)})).show(); 
            };
-        } // onclick 
+        } else {
+//            lesson_url = "https://ram8647.appspot.com/mobileCSP/unit?unit=" + unit_id + "&lesson=" + lesson_id
+            lesson_url = "https://ram8647.appspot.com/mobileCSP/assets/lib/quizly/gcb-index.html?backpack=hidden&selector=hidden&quizname=" 
+               + attempts_array[i][5];
+            el.onclick = function() {
+              openModal();
+              modal = document.getElementById('question-preview');
+              modal.style.visibility = 'visible';
+              var params = {
+                action: 'question_preview',
+                quid: 0,                      // Quizly quiz
+                url: lesson_url
+              };
+              $('#question-preview').html($('<iframe />').attr(
+                 {src: 'teacher?' + $.param(params)})).show(); 
+            };
+        } // else
       } // for
 
       // Row 1 is for the number of attempts
