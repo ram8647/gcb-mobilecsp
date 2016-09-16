@@ -72,6 +72,7 @@ TEMPLATE_DIR = os.path.join(
 TEACHERS_TEMPLATE = os.path.join(TEMPLATE_DIR, 'teacher_dashboard.html')
 STUDENT_ROSTER_TEMPLATE = os.path.join(TEMPLATE_DIR, 'student_roster.html')
 STUDENT_DASHBOARD_TEMPLATE = os.path.join(TEMPLATE_DIR, 'student_dashboard.html')
+QUESTION_PREVIEW_TEMPLATE = os.path.join(TEMPLATE_DIR, 'question_preview.html')
 
 class TeacherHandlerMixin(object):
     def get_admin_action_url(self, action, key=None):
@@ -200,6 +201,7 @@ class TeacherDashboardHandler(
     ADD_SECTION_ACTION = 'add_section'
     DISPLAY_ROSTER_ACTION = 'display_roster'
     STUDENT_DASHBOARD_ACTION = 'student_dashboard'
+    PREVIEW_QUESTION = 'question_preview'
 
     # The links for Teacher functions
     DASHBOARD_LINK_URL = 'teacher'
@@ -208,7 +210,8 @@ class TeacherDashboardHandler(
 
     # Not sure what these do?  May be expendable?
     default_action = 'edit_sections'
-    get_actions = [default_action, LIST_SECTION_ACTION, EDIT_SECTION_ACTION, ADD_SECTION_ACTION, DISPLAY_ROSTER_ACTION, STUDENT_DASHBOARD_ACTION]
+    get_actions = [default_action, LIST_SECTION_ACTION, EDIT_SECTION_ACTION, 
+                   ADD_SECTION_ACTION, DISPLAY_ROSTER_ACTION, STUDENT_DASHBOARD_ACTION, PREVIEW_QUESTION]
     post_actions = [DELETE_SECTION_ACTION]
 
     def is_registered_teacher(self, user_email):
@@ -252,6 +255,19 @@ class TeacherDashboardHandler(
 
         self.template_value['navbar'] = {'teacher': True}
         self.render(template)
+
+    def get_question_preview(self):
+        self.template_value['navbar'] = {'teacher': True}
+        self.template_value['resources_path'] = RESOURCES_PATH
+        url = self.request.get('url')
+        logging.warning('***RAM*** teacher get_question_preview ' + self.request.get('quid'))
+        if url ==  '':
+            self.template_value['question'] = tags.html_to_safe_dom(
+                '<question quid="{}">'.format(self.request.get('quid')), self)
+        else:
+            self.template_value['url'] = url
+            self.template_value['question'] = 'Quizly'
+        self.render(QUESTION_PREVIEW_TEMPLATE)
 
     def get_edit_sections(self):
         """ Displays a list of this teacher's sections, using the TEACHERS_TEMPLATE.

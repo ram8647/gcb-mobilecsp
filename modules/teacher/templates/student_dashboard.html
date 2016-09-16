@@ -148,7 +148,7 @@
            progressHTML += "<span style=width:" + progress_bar + " ;></span></div></progress>";
            cell.innerHTML = innerHtml + "<br>" + progressHTML; 
            cell = row.insertCell(2);
-           cell.style.width="10%";
+           cell.style.width="10%; color:blue;";
            var score_ratio = get_lesson_progress(uid, lid);
            var md_class_name = "zmdi zmdi-" + lid + " zmdi-eye";
            cell.className = md_class_name;
@@ -221,10 +221,11 @@
           var id = questions[key]['question_id'];
           var score = questions[key]['weighted_score'];
           var desc = questions[key]['description'];
+          var type = questions[key]['question_type'];
           if (id in attempts) {
-            question_attempts.push([id, attempts[id], score, desc]);
+            question_attempts.push([id, attempts[id], score, type, desc]);
           } else {
-            question_attempts.push([id, 0, score, desc]);
+            question_attempts.push([id, 0, score, type, desc]);
           }
         }
 	return question_attempts;
@@ -276,13 +277,45 @@
         var cell = row.insertCell(i+1);
         var id = attempts_array[i][0];
 
-        // Make a unique class name for each clickable icon -- icns from material design, see link above
+        // Make a unique class name for each clickable icon -- icons from material design, see link above
         var md_class_name = "zmdi zmdi-" + id + " zmdi-eye";
-        var desc = attempts_array[i][3];
-        cell.innerHTML = "<div style='color:blue;' >"  +
-             "<a target='_blank' class='" + md_class_name + 
-             "' href=https://ram8647.appspot.com/mobileCSP/unit?unit=" + unit_id + "&lesson=" + lesson_id + "></a>" +
+        var type = attempts_array[i][3];
+        var desc = attempts_array[i][4];
+        cell.innerHTML = "<div style='color:blue;' class='"  + md_class_name + "' id='Q" + id + "' uid='" 
+                          + unit_id + "' lid='" + lesson_id + "' type='" + type + "'></div>" + 
              " <div class='tooltip'  > Q" + (i+1) + "<span class='tooltiptext'>" + desc + " </span></div>";
+
+        var el = document.getElementById("Q" + id);
+        el.setAttribute('quid', id);
+        var type = el.getAttribute('type');
+        if (type != 'Quizly') {
+	   el.onclick = function() {  // Open a modal iframe to display the question
+	     openModal();
+	     modal = document.getElementById('question-preview');
+	     modal.style.visibility = 'visible';
+	     var params = {
+		action: 'question_preview',
+		quid: this.getAttribute('quid'),
+		url: ''
+	     };
+	      $('#question-preview').html($('<iframe />').attr(
+		{src: 'teacher?' + $.param(params)})).show(); 
+           };
+         } else {
+            lesson_url = "https://ram8647.appspot.com/mobileCSP/unit?unit=" + unit_id + "&lesson=" + lesson_id
+            el.onclick = function() {
+	     openModal();
+	     modal = document.getElementById('question-preview');
+	     modal.style.visibility = 'visible';
+	     var params = {
+		action: 'question_preview',
+		quid: 0,                      // Quizly quiz
+                url: lesson_url
+	     };
+	      $('#question-preview').html($('<iframe />').attr(
+		{src: 'teacher?' + $.param(params)})).show(); 
+           };
+         }
       }
 
       // Row 1 is for the number of attempts
@@ -447,10 +480,11 @@
       </table>
     </div>
 
+    <!-- Modal window for previewing questions -->
     <div id="modal-window" style="visibility:hidden;">
       <div id="question-background"></div>
       <div id="question-container">
-        <a class="gcb-button question-close-button">X</a>
+        <a style="visibility:hidden; position:absolute; right:5%; bottom:5%; " id="question-close-button" class="gcb-button">Close</a>
         <div id="question-preview"><iframe  id="question-preview" /></div>
       </div>
     </div>
