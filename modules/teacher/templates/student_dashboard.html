@@ -206,12 +206,14 @@
 {% if student_email  %}
   <script>
     /*
-     * Creates an array of [question_id, attempts, score] for each
-     *  question in the questions array.
+     * Creates an array of [question_id, attempts, score, type, desc, quizlyname] for each
+     *  question in the questions array. Non-quizly questions have name = ''.  These
+     *  data are used to render and array of links and hovers that enable the user
+     *  to preview  each question, including Quizlys.
      *
      * @param questions a dict of questions for this lesson
      * @param attempts an array of the number of student attempts at a question
-     * @return An array of the form [id, attempts, score] for each question.
+     * @return An array of the form [id, attempts, score, type, desc, quizlyname] for each question.
      */
     function createQuestionsAttemptsArray(questions, attempts) {
         var question_attempts = [];
@@ -220,12 +222,20 @@
             continue;
           var id = questions[key]['question_id'];
           var score = questions[key]['weighted_score'];
-          var desc = questions[key]['description'];
+          var description = questions[key]['description'];
+          var quizly_name = '';
+          var desc = '';
+          if (typeof(description) == 'object') {  // Quizly questions are described as dicts
+             desc = description['desc'];          //  of the form {desc, name}
+             quizly_name = description['name'];
+          } else {
+            desc = description;                   // Non-quizly desc's are just strings
+          }
           var type = questions[key]['question_type'];
           if (id in attempts) {
-            question_attempts.push([id, attempts[id], score, type, desc]);
+            question_attempts.push([id, attempts[id], score, type, desc, quizly_name]);
           } else {
-            question_attempts.push([id, 0, score, type, desc]);
+            question_attempts.push([id, 0, score, type, desc, quizly_name]);
           }
         }
 	return question_attempts;
@@ -254,12 +264,13 @@
     }
 
     /*
-     * Creates an n x 4 HTML table for a given lesson of n questions 
+     * Creates an n x 6 HTML table for a given lesson of n questions 
      *  where each column consists of the question-id, the number
-     *  of attempts, the student's score, and a description of the question.
+     *  of attempts, the student's score, and several descriptors for the
+     *  question, including type, description, and quizly_name.
      *
      * @param lesson_id the lesson's id number
-     * @param attempts_array an array of the form [quid, attempts, score]
+     * @param attempts_array an array of the form [quid, attempts, score, ]
      * @return an HTML table displaying the students attempts and scores
      */
     function get_attempts_table(unit_id, lesson_id, attempts_array) {
@@ -268,7 +279,7 @@
       while (table.firstChild) {
         table.removeChild(table.firstChild);
       }
-      // Row 0 is for the question id and a clickable icon that will open the modal window
+      // Row 0 is for the question id and a clickable icon that will open the modal preview window
       var row = table.insertRow(0);
       var cell = row.insertCell(0);
       cell.innerHTML = "Questions";
@@ -281,6 +292,8 @@
         var md_class_name = "zmdi zmdi-" + id + " zmdi-eye";
         var type = attempts_array[i][3];
         var desc = attempts_array[i][4];
+
+        // InnerHTML stores specifics about the question and supports a tooltip.
         cell.innerHTML = "<div style='color:blue;' class='"  + md_class_name + "' id='Q" + id + "' uid='" 
                           + unit_id + "' lid='" + lesson_id + "' type='" + type + "'></div>" + 
              " <div class='tooltip'  > Q" + (i+1) + "<span class='tooltiptext'>" + desc + " </span></div>";
@@ -288,35 +301,28 @@
         var el = document.getElementById("Q" + id);
         el.setAttribute('quid', id);
         var type = el.getAttribute('type');
+        var url = '';
+        var quid = 0;
         if (type != 'Quizly') {
-	   el.onclick = function() {  // Open a modal iframe to display the question
-	     openModal();
-	     modal = document.getElementById('question-preview');
-	     modal.style.visibility = 'visible';
-	     var params = {
+           url = "https://ram8647.appspot.com/mobileCSP/assets/lib/quizly/gcb-index.html?backpack=hidden&selector=hidden&quizname=" +
+               attempts_array[i][5];
+        } else {
+           quid = this.getAttribute('quid'),
+        }
+        el.onclick = function() {  // Open a modal iframe to display the question
+          openModal();
+          modal = document.getElementById('question-preview');
+          modal.style.visibility = 'visible';
+          var params = {
 		action: 'question_preview',
-		quid: this.getAttribute('quid'),
-		url: ''
-	     };
-	      $('#question-preview').html($('<iframe />').attr(
-		{src: 'teacher?' + $.param(params)})).show(); 
+		quid: quid
+		url: url
+          };
+           $('#question-preview').html($('<iframe />').attr(
+             {src: 'teacher?' + $.param(params)})).show(); 
            };
-         } else {
-            lesson_url = "https://ram8647.appspot.com/mobileCSP/unit?unit=" + unit_id + "&lesson=" + lesson_id
-            el.onclick = function() {
-	     openModal();
-	     modal = document.getElementById('question-preview');
-	     modal.style.visibility = 'visible';
-	     var params = {
-		action: 'question_preview',
-		quid: 0,                      // Quizly quiz
-                url: lesson_url
-	     };
-	      $('#question-preview').html($('<iframe />').attr(
-		{src: 'teacher?' + $.param(params)})).show(); 
-           };
-         }
-      }
+        } // onclick 
+      } // for
 
       // Row 1 is for the number of attempts
       row = table.insertRow(1);

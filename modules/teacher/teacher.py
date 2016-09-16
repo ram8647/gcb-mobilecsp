@@ -256,11 +256,22 @@ class TeacherDashboardHandler(
         self.template_value['navbar'] = {'teacher': True}
         self.render(template)
 
+    
     def get_question_preview(self):
+        """
+            Provides a preview of quiz questions. 
+
+            Invoked from student_dashboard.  The question is displayed in a modal
+            window that is initialized in modal-window.js.
+
+            This is an adaptation of the question_preview used by the dashboard module.
+            It supports Quizly questions.
+        """
+
         self.template_value['navbar'] = {'teacher': True}
         self.template_value['resources_path'] = RESOURCES_PATH
         url = self.request.get('url')
-        logging.warning('***RAM*** teacher get_question_preview ' + self.request.get('quid'))
+#        logging.warning('***RAM*** teacher get_question_preview ' + self.request.get('quid'))
         if url ==  '':
             self.template_value['question'] = tags.html_to_safe_dom(
                 '<question quid="{}">'.format(self.request.get('quid')), self)

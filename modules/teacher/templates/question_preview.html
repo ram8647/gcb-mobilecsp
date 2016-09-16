@@ -19,13 +19,19 @@
     </style>
     <script>
       $(function() {
-        function resizeModal() {
-          containerIframe.height(document.body.clientHeight);
-        }
-        var containerIframe = $(window.parent.document).find(
-          "#modal-window iframe");
-        resizeModal();
-        window.setInterval(resizeModal, 50);
+        {% if question != 'Quizly' %}
+	  function resizeModal() {
+	    containerIframe.height(document.body.clientHeight);
+	  }
+	  var containerIframe = $(window.parent.document).find(
+	    "#modal-window iframe");
+	  resizeModal();
+	  window.setInterval(resizeModal, 50);
+       {% else %}
+	 var containerIframe = $(window.parent.document).find(
+	   "#modal-window iframe");
+	 containerIframe.height("550px");
+       {% endif %}
       });
     </script>
   </head>
@@ -37,9 +43,9 @@
 	 class="gcb-aside"
       >
       <div style="border:1px solid black; text-align: center; vertical-align:middle;">
-      <h2>Sorry. No preview yet available for Quizly questions. </h2>
+      <h2>Quizly Exercise </h2>
       <br /><br />
-      <h3>Click <a target="_blank" href={{ url }}>here</a> to open the lesson.</h3>
+      <h3>Click <a href={{ url }}>here</a> to open the exercise.</h3>
       </div>
     {% else %}
     <div
