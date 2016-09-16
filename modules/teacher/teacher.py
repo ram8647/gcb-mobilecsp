@@ -271,7 +271,7 @@ class TeacherDashboardHandler(
         self.template_value['navbar'] = {'teacher': True}
         self.template_value['resources_path'] = RESOURCES_PATH
         url = self.request.get('url')
-#        logging.warning('***RAM*** teacher get_question_preview ' + self.request.get('quid'))
+#        logging.warning('***RAM*** teacher get_question_preview ' + url)
         if url ==  '':
             self.template_value['question'] = tags.html_to_safe_dom(
                 '<question quid="{}">'.format(self.request.get('quid')), self)

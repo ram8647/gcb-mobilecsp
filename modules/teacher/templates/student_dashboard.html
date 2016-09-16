@@ -292,11 +292,12 @@
         var md_class_name = "zmdi zmdi-" + id + " zmdi-eye";
         var type = attempts_array[i][3];
         var desc = attempts_array[i][4];
+        var qname = attempts_array[i][5];
 
         // InnerHTML stores specifics about the question and supports a tooltip.
         cell.innerHTML = "<div style='color:blue;' class='"  + md_class_name + "' id='Q" + id + "' uid='" 
-                          + unit_id + "' lid='" + lesson_id + "' type='" + type + "'></div>" + 
-             " <div class='tooltip'  > Q" + (i+1) + "<span class='tooltiptext'>" + desc + " </span></div>";
+                          + unit_id + "' lid='" + lesson_id + "' type='" + type + "' qname='" + qname + "'></div>" + 
+             " <div class='tooltip'  > Q" + (i+1) + "<span class='tooltiptext'>" + desc + "</span></div";
 
         var el = document.getElementById("Q" + id);
         el.setAttribute('quid', id);
@@ -315,9 +316,6 @@
                {src: 'teacher?' + $.param(params)})).show(); 
            };
         } else {
-//            lesson_url = "https://ram8647.appspot.com/mobileCSP/unit?unit=" + unit_id + "&lesson=" + lesson_id
-            lesson_url = "https://ram8647.appspot.com/mobileCSP/assets/lib/quizly/gcb-index.html?backpack=hidden&selector=hidden&quizname=" 
-               + attempts_array[i][5];
             el.onclick = function() {
               openModal();
               modal = document.getElementById('question-preview');
@@ -325,7 +323,8 @@
               var params = {
                 action: 'question_preview',
                 quid: 0,                      // Quizly quiz
-                url: lesson_url
+                url: "https://ram8647.appspot.com/mobileCSP/assets/lib/quizly/gcb-index.html?backpack=hidden&selector=hidden&quizname=" 
+                      + this.getAttribute('qname')
               };
               $('#question-preview').html($('<iframe />').attr(
                  {src: 'teacher?' + $.param(params)})).show(); 
