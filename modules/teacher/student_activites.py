@@ -30,7 +30,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
         process them.
     """
 
-    CUTOFF_DATE = datetime.datetime(2016,6,1)
+    CUTOFF_DATE = datetime.datetime(2016,8,1)
 
 
     def __init__(self):
