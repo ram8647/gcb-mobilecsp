@@ -195,11 +195,12 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         schema = TeacherItemRESTHandler.SCHEMA()
 
         entity_dict = transforms.entity_to_dict(entity)
-#        logging.warning('***RAM*** get entity = ' + str(entity_dict))
+        logging.warning('***RAM*** get entity = ' + str(entity_dict))
 
         # Distinguish between adding a new entity and editing and existing entity
         # If this is a new Entity, it won't have a user_id yet.
-        if entity_dict['user_id']:
+        logging.warning('***RAM*** user_id ' + str(entity_dict['user_id']))
+        if entity_dict['user_id'] or entity_dict['email'] != '':
             entity_dict['mode'] = 'Edit'
         else:
             entity_dict['mode'] = 'Add'
@@ -223,7 +224,7 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         key = request.get('key')
         edit_mode = request.get('mode')
 
-#        logging.warning('***RAM*** put request = ' + str(request))
+        logging.warning('***RAM*** put request = ' + str(request))
 
         if not self.assert_xsrf_token_or_fail(
                 request, 'teacher-put', {'key': key}):
