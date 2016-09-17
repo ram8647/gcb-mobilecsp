@@ -17,6 +17,7 @@ __author__ = 'ram8647@trincoll.edu'
 
 import datetime
 import logging
+import re 
 
 from google.appengine.ext import db
 from google.appengine.api import users
@@ -150,6 +151,10 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         date = datetime.datetime(date.year, date.month, date.day)
         entity_dict['date'] = date
 
+        emails = entity_dict['students']   # Student emails are comma-delimited
+        emails = emails.replace(',', '\n') # Replace with new lines for display
+        entity_dict['students'] = emails
+
         entity_dict.update(
             resources_display.LabelGroupsHelper.labels_to_field_data(
                 common_utils.text_to_list(entity.labels)))
@@ -192,13 +197,15 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
             transforms.loads(payload), schema.get_json_schema_dict())
 
         # Check for invalid emails -- email must be a registered student
-        emails = update_dict['students'].split(',')
+        # Found the regular expression on Stackoverflow
+        emails_raw = update_dict['students']
+        emails = re.findall(r'[\w\.-]+@[\w\.-]+', emails_raw)
         
         return_code = 200
         bad_emails = []
         good_emails = []
         for email in emails:
-            email = email.strip(' \t\n\r')
+#            email = email.strip(' \t\n\r')
             if email:
                 logging.debug('***RAM*** email = |' + email + '|')
                 student = Student.get_first_by_email(email)[0]  # returns a tuple
@@ -225,7 +232,7 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
             for email in good_emails:
                 confirm_message += email + '\n'
           
-            update_dict['students'] = ','.join(good_emails)  # Comma-delimited
+            update_dict['students'] = ','.join(good_emails)  # New-line delimited
 
         entity.labels = common_utils.list_to_text(
             resources_display.LabelGroupsHelper.field_data_to_labels(
