@@ -145,11 +145,20 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
 
     @classmethod
     def SCHEMA(cls):
+        """
+           SCHEMA used to display Entity form in oeditor.  
+
+           The 'mode' field is used to distinguish between
+           adding and editing an Entity.
+        """
+
         schema = schema_fields.FieldRegistry('Teacher',
             extra_schema_dict_values={
                 'className': 'inputEx-Group new-form-layout'})
         schema.add_property(schema_fields.SchemaField(
             'key', 'ID', 'string', editable=False, hidden=True))
+        schema.add_property(schema_fields.SchemaField(          
+            'mode', 'Mode', 'string', editable=False, hidden=True)) 
         schema.add_property(schema_fields.SchemaField(
             'name', 'Name', 'string',
             description=messages.TEACHER_NAME_DESCRIPTION))
@@ -165,6 +174,7 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         """Handles REST GET verb and returns an object as JSON payload."""
         key = self.request.get('key')
 
+        # The Entity will have been saved already either with or without data.
         try:
             entity = TeacherEntity.get(key)
         except db.BadKeyError:
@@ -185,6 +195,14 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         schema = TeacherItemRESTHandler.SCHEMA()
 
         entity_dict = transforms.entity_to_dict(entity)
+#        logging.warning('***RAM*** get entity = ' + str(entity_dict))
+
+        # Distinguish between adding a new entity and editing and existing entity
+        # If this is a new Entity, it won't have a user_id yet.
+        if entity_dict['user_id']:
+            entity_dict['mode'] = 'Edit'
+        else:
+            entity_dict['mode'] = 'Add'
 
         # Format the internal date object as ISO 8601 datetime, with time
         # defaulting to 00:00:00
@@ -203,6 +221,9 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         """Handles REST PUT verb with JSON payload."""
         request = transforms.loads(self.request.get('request'))
         key = request.get('key')
+        edit_mode = request.get('mode')
+
+#        logging.warning('***RAM*** put request = ' + str(request))
 
         if not self.assert_xsrf_token_or_fail(
                 request, 'teacher-put', {'key': key}):
@@ -233,12 +254,13 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
             return
 
         # Check that the teacher isn't already registered
-        teachers = TeacherEntity.get_teachers()
-        for teacher in teachers:
-            if teacher.email == update_dict['email']:
-                transforms.send_json_response(
-                    self, 404, 'MobileCSP: User is already registered as a teacher ' + update_dict['email'], {'key': key})
-                return
+        if update_dict['mode'] == 'Add':
+            teachers = TeacherEntity.get_teachers()
+            for teacher in teachers:
+                if teacher.email == update_dict['email']:
+                    transforms.send_json_response(
+                        self, 404, 'MobileCSP: User is already registered as a teacher ' + update_dict['email'], {'key': key})
+                    return
 
 #        logging.debug('****RAM**** teacher id ' + str(user.user_id))
 
