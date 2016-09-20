@@ -175,14 +175,12 @@ class QuizlyExerciseTag(tags.BaseTag):
         src += '&hints=' + hashints
         src += '&repeatable=' + isrepeatable
 
-        # Has this lesson already been completed?
-
+        # Has this question already been completed, in-progress, or not-started?
         progress_tracker = handler.get_course().get_progress_tracker()
+        status = 0
         if not student.is_transient:
             student_progress = progress_tracker.get_or_create_progress(student)
-            completed = progress_tracker.is_component_completed(student_progress, unitid, lessonid, instanceid)
-        else:
-            completed = False
+            status = progress_tracker.get_component_status(unitid, lessonid,instanceid,student)
 
         # Handler for the checkAnswer button. Quizly puts the quizName and result
         #  on window.parent.quizlies and this script reads it from there.
@@ -215,17 +213,16 @@ class QuizlyExerciseTag(tags.BaseTag):
         #  Add the box-surrounded iframe that will hold the quiz. Blockly will be a frame w/in this frame.
         returnStr += '<div style="border: 1px solid black; margin: 5px; padding: 5px;">'
         returnStr += '<div id="' + id_iconholder + '" class="gcb-progress-icon-holder gcb-pull-right">'
-        progress_img = '1 point <img src="assets/img/completed.png" />' if completed else '1 point <img src="assets/img/not_started.png" />' 
+        progress_img = '1 point '
+        if status == 0:
+            progress_img += '<img src="assets/img/not_started.png" />'
+        elif status == 1:
+            progress_img += '<img src="assets/img/in_progress.png" />'
+        else:
+            progress_img += '<img src="assets/img/completed.png" />'
         returnStr += progress_img
-#        returnStr += '1 point <img src="assets/lib/not_started.png" />'
-        returnStr += '</div>'
         returnStr += '<iframe style= "border: 0px; margin: 1px; padding: 1px;" src=' + src + ' width="' + width + '" height="' + height + '"></iframe>'
         returnStr += '</div>'
-
-#  Commented out -- this would add a separate GCB "Check Answer" button.  Currently "Check Answer" is within Quizly frame.
-#         returnStr += '<div class="qt-check-answer">'
-#         returnStr += '<button onclick="checkAnswer()" class="gcb-button qt-check-answer-button">Check Answer</button>'
-#         returnStr += '</div>'
 
         return tags.html_string_to_element_tree(returnStr)
 

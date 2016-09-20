@@ -59,6 +59,7 @@ from teacher_entity import TeacherEntity
 from teacher_entity import TeacherItemRESTHandler
 from teacher_entity import TeacherRights
 from student_activites import ActivityScoreParser
+from student_answers import StudentAnswersEntity
 
 MODULE_NAME = 'teacher'
 MODULE_TITLE = 'Teacher Dashboard'
@@ -710,8 +711,31 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
 
 
 
+def record_tag_assessment(source, user, data):
+    """ Callback function when student attempts a quiz question.
+
+        A tag-assessment event is a submittal of an answer
+        for a lesson question or quizly exercise.  The data
+        dict has some of the information that is needed to
+        construct a performance profile on these answers for
+        this user.
+    """
+
+    if source == 'tag-assessment':
+        StudentAnswersEntity.record(user, data)
+#        logging.debug('***RAM*** data = ' + str(data))
+
 def notify_module_enabled():
-    """Handles things after module has been enabled."""
+    """Handles things after module has been enabled.
+
+       Adding an event listener to EventEntity lets us record
+       student activity on questions and quizly exercises in
+       our own database as they occur.
+
+       TODO: Try to measure the cost of storing this extra
+       data.
+    """
+    EventEntity.EVENT_LISTENERS.append(record_tag_assessment)
 
 custom_module = None
 
