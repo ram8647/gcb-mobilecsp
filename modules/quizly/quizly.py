@@ -213,7 +213,9 @@ class QuizlyExerciseTag(tags.BaseTag):
         #  Add the box-surrounded iframe that will hold the quiz. Blockly will be a frame w/in this frame.
         returnStr += '<div style="border: 1px solid black; margin: 5px; padding: 5px;">'
         returnStr += '<div id="' + id_iconholder + '" class="gcb-progress-icon-holder gcb-pull-right">'
-        progress_img = '1 point '
+        pointsdiv = '<div class="qt-points"><em>1 point&nbsp;&nbsp;</em></div>'
+#        returnStr += pointsdiv
+        progress_img = ''
         if status == 0:
             progress_img += '<img src="assets/img/not_started.png" />'
         elif status == 1:
@@ -221,7 +223,10 @@ class QuizlyExerciseTag(tags.BaseTag):
         else:
             progress_img += '<img src="assets/img/completed.png" />'
         returnStr += progress_img
-        returnStr += '<iframe style= "border: 0px; margin: 1px; padding: 1px;" src=' + src + ' width="' + width + '" height="' + height + '"></iframe>'
+        returnStr += '</div>'
+        returnStr += pointsdiv
+        returnStr += '<iframe style= "border: 0px; margin: 1px; padding: 1px;" src=' + src + ' width="' + width + '" height="' + height + '">'
+        returnStr += '</iframe>'
         returnStr += '</div>'
 
         return tags.html_string_to_element_tree(returnStr)
