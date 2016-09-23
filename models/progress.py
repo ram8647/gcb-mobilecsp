@@ -541,8 +541,8 @@ class UnitLessonCompletionTracker(object):
         assert len(split_event_key) == 2
         unit_id = split_event_key[1]
 
-        if self._get_entity_value(progress, event_key) == self.COMPLETED_STATE:
-            return
+#         if self._get_entity_value(progress, event_key) == self.COMPLETED_STATE:
+#             return
 
         # Record that at least one lesson in this unit has been completed.
         self._set_entity_value(progress, event_key, self.IN_PROGRESS_STATE)
@@ -583,8 +583,8 @@ class UnitLessonCompletionTracker(object):
         lesson_id = split_event_key[3]
         logging.warning('***RAM*** _update_lesson ' + str(unit_id) + ' ' + str(lesson_id))
 
-        if self._get_entity_value(progress, event_key) == self.COMPLETED_STATE:
-            return
+#         if self._get_entity_value(progress, event_key) == self.COMPLETED_STATE:
+#             return
 
         # Record that at least one part of this lesson has been completed.
         self._set_entity_value(progress, event_key, self.IN_PROGRESS_STATE)
@@ -637,9 +637,9 @@ class UnitLessonCompletionTracker(object):
         unit_id = split_event_key[1]
         lesson_id = split_event_key[3]
 
-        if self._get_entity_value(progress, event_key) == self.COMPLETED_STATE:
-            logging.warning('***RAM*** update_html ALREADY COMPLETED ' )
-            return
+#         if self._get_entity_value(progress, event_key) == self.COMPLETED_STATE:
+#             logging.warning('***RAM*** update_html ALREADY COMPLETED ' )
+#             return
 
         # Record that at least one block in this activity has been completed.
         self._set_entity_value(progress, event_key, self.IN_PROGRESS_STATE)
