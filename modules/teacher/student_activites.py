@@ -130,7 +130,14 @@ class ActivityScoreParser(jobs.MapReduceJob):
          quizly_unit_id =  int(url[url.find('unit=') + len('unit=') : url.find('&lesson=')])
          quizly_lesson_id = int(url[ url.find('&lesson=') + len('&lesson=') : ])
          quizly_score = data['score']
-         quizly_answer = data['answer']
+#          if instance_id == 'rCgLbJRceEbn' or instance_id == '7uowepixSjT4':
+#              logging.warning('***RAM*** rCgLbJRceEbn data = ' + str(data))
+
+         if 'answer' in data:           # Takes care of legacy events that are missing answer?
+             quizly_answer = data['answer']
+         else:
+             quizly_answer = False
+
          quizly_type = 'Quizly'      # reported in data as SaQuestion
          quizly_sequence = random.randint(10,30)                  #### Make up a random sequence #
 
