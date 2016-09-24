@@ -38,6 +38,10 @@ class ActivityScoreParser(jobs.MapReduceJob):
         self.activity_scores = { }
         self.params = {}
         self.num_attempts_dict = { }
+       
+        # This is a table of all the Quizly exercises currently in the course.  It is used to provide a
+        #  description in the Student Dashboard and also to validate that an instance_id is still 
+        #  currently valid. 
         self.quizly_desc = {               # instance_id:description
             'LXgF4NO50hNM':{'desc':'Quizly, Pause the Player','name':'quiz_pause_the_player'},       # Unit 2
             'BtQ8hSoGkeml':{'desc':'Quizly, Stop the Player','name':'quiz_button_click_stop_player'},
@@ -126,6 +130,10 @@ class ActivityScoreParser(jobs.MapReduceJob):
              with this approach is that it doesn't preserve the sequence of Quizly
              exercises within the lesson.
          """
+
+         # Check that the question is still a valid question (things move around)
+         if not self.quizly_desc[instance_id]:
+             return
 
 #        logging.debug('***RAM*** A question with instance_id = ' + str(instance_id) +
 #          ' and no quid and location = ' + str(data['location']))
