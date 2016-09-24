@@ -132,7 +132,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
          """
 
          # Check that the question is still a valid question (things move around)
-         if not self.quizly_desc[instance_id]:
+         if not instance_id in self.quizly_desc:
              return
 
 #        logging.debug('***RAM*** A question with instance_id = ' + str(instance_id) +
