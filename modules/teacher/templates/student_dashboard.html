@@ -494,13 +494,15 @@
       </table>
     </div>
 
-    <!-- Modal window for previewing questions -->
-    <div id="modal-window" style="visibility:hidden;">
-      <div id="question-background"></div>
-      <div id="question-container">
-        <a style="visibility:hidden; position:absolute; right:5%; bottom:5%; " id="question-close-button" class="gcb-button">Close</a>
-        <div id="question-preview"><iframe  id="question-preview" /></div>
-      </div>
-    </div>
+</div>
+
+<!-- Modal window for previewing questions -->
+<!-- Should be outside main div so main div can be opaque background. -->
+<div id="modal-window" style="visibility:hidden;">
+  <div id="question-background"></div>
+  <div id="question-container">
+    <a style="visibility:hidden; position:absolute; right:5%; bottom:5%; " id="question-close-button" class="gcb-button">Close</a>
+    <div id="question-preview"><iframe  id="question-preview" /></div>
+  </div>
 </div>
 {% endblock %}

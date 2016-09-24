@@ -54,7 +54,7 @@ class ActivityScoreParser(jobs.MapReduceJob):
             'pCZugPUxlHeb':{'desc':'Quizly, Initializing','name':'quiz_incrementing'},
             '8T30OkUf5r1r':{'desc':'Quizly, Simple if/else','name':'quiz_simple_if_else'},
             'KQctST8skmaC':{'desc':'Quizly, Procedure to double a variable','name':'quiz_proc_double'},
-            'v2m4Ks25S1MX':{'desc':'Quizly, Procedure to add globals','name':'quiz_add_global'},
+            'v2m4Ks25S1MX':{'desc':'Quizly, Procedure to add globals','name':'quiz_add_globals'},
             'rCgLbJRceEbn':{'desc':'Quizly, Procedure to reset the score','name':'quiz_reset_score'},     # Unit 4   
             '7uowepixSjT4':{'desc':'Quizly, Procedure to calculate the hit rate','name':'quiz_calculate_hit_rate'},
             'w18q4UWKxvlM':{'desc':'Quizly, Fix a bug in updateScore procedure','name':'quiz_procedure_bug'},
