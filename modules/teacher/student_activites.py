@@ -55,6 +55,9 @@ class ActivityScoreParser(jobs.MapReduceJob):
             '7uowepixSjT4':{'desc':'Procedure to calculate the hit rate','name':'quiz_calculate_hit_rate'},
             'w18q4UWKxvlM':{'desc':'Fix a bug in updateScore procedure','name':'quiz_procedure_bug'},
             'rvjUJMaLZ56s':{'desc':'If/else greater than','name':'quiz_if_x_greater_than_y'},
+            'scgF2VSCjUv8':{'desc':'Simple if/else','name':'quiz_simple_if_else'},    # Unit 5
+            'JatcV7u6GOer':{'desc':'If x greater than y','name':'quiz_if_x_greater_than_y'},   
+            #  No Quizly exercises beyond Unit 5 -->   we should create more!
         }
 
     @staticmethod
