@@ -27,7 +27,7 @@ Brief description of your course section.
 """
 
 SECTION_STUDENTS_DESCRIPTION = """
-Enter student emails one per line or separated by commas.
+Must be the exact emails used by the registered student -- one per line or separated by commas.
 """
 
 SECTION_DATE_DESCRIPTION = """

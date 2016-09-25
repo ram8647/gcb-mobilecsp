@@ -92,32 +92,35 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
     @classmethod
     def SCHEMA(cls):
-        schema = schema_fields.FieldRegistry('Create a New Course Section',
+        schema = schema_fields.FieldRegistry('Section Editor',
             extra_schema_dict_values={
                 'className': 'inputEx-Group new-form-layout'})
         schema.add_property(schema_fields.SchemaField(
             'key', 'ID', 'string', editable=False, hidden=True))
         schema.add_property(schema_fields.SchemaField(
+            'mode', 'Mode', 'string', editable=False, hidden=True))
+        schema.add_property(schema_fields.SchemaField(
+            'directions', 'Directions', 'string',
+            editable=False, optional=True,
+            default_value='Here is what to do.'))
+        schema.add_property(schema_fields.SchemaField(
             'name', 'Name', 'string',
-            description=messages.SECTION_NAME_DESCRIPTION))
-        schema.add_property(schema_fields.SchemaField(
-            'description', 'Description', 'string',
-            description=messages.SECTION_BLURB_DESCRIPTION))
-        schema.add_property(schema_fields.SchemaField(
-            'students', 'Student Emails', 'text',
-            description=messages.SECTION_STUDENTS_DESCRIPTION,
-            optional=True))
+        ))
         schema.add_property(schema_fields.SchemaField(
             'acadyr', 'Academic Year', 'string',
-            description=messages.ACADEMIC_YEAR_DESCRIPTION,
             select_data=[
                  ('2016-17', '2016-17'),
                  ('2017-18', '2017-18'),
                  ('2018-19', '2018-19'),
                  ('2019-20', '2019-20')]))
 
-        resources_display.LabelGroupsHelper.add_labels_schema_fields(
-            schema, 'section')
+        schema.add_property(schema_fields.SchemaField(
+            'description', 'Optional Description', 'string',
+            optional=True))
+        schema.add_property(schema_fields.SchemaField(
+            'students', 'Class Roster', 'text',
+            description=messages.SECTION_STUDENTS_DESCRIPTION,
+            optional=True))
         return schema
 
     def get(self):
@@ -144,16 +147,32 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         schema = SectionItemRESTHandler.SCHEMA()
 
         entity_dict = transforms.entity_to_dict(entity)
+        logging.warning('***RAM*** get entity = ' + str(entity_dict))
+
+        # Distinguish between adding a new entity and editing an existing entity
+        # If this is a new Entity, its acadyr field will be blank.
+        if entity_dict['acadyr'] != '':
+            entity_dict['mode'] = 'Edit'
+        else:
+            entity_dict['mode'] = 'Add'
 
         # Format the internal date object as ISO 8601 datetime, with time
         # defaulting to 00:00:00
         date = entity_dict['date']
         date = datetime.datetime(date.year, date.month, date.day)
         entity_dict['date'] = date
-
+        
         emails = entity_dict['students']   # Student emails are comma-delimited
         emails = emails.replace(',', '\n') # Replace with new lines for display
         entity_dict['students'] = emails
+
+        if entity_dict['mode'] == 'Edit':
+            entity_dict['directions'] = "Edit a section: To add or delete students, add (or remove) their emails to (or from) the Class Roster."
+        else:
+           entity_dict['name'] = "New section"
+           entity_dict['directions'] = "New section: Give the section a name and (optionally) a short description and pick an academic year. " + \
+               "To create a roster of students, you must use the exact email that the student is registered under. Put one email per line or " + \
+               "separate emails by commas."
 
         entity_dict.update(
             resources_display.LabelGroupsHelper.labels_to_field_data(
@@ -215,16 +234,16 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
                     good_emails.append(email)
      
         confirm_message  = 'Confirmation\n'
-        confirm_message += '------------\n\n\n' 
+        confirm_message += '------------\n\n' 
         if bad_emails:
             logging.info('***RAM*** bad_emails found = ' + str(bad_emails))
             return_code = 401
             confirm_message = 'The following were invalid emails:\n'
             for email in bad_emails: 
                 confirm_message += email + '\n'
-            confirm_message += '\n Either there is no student with that email\n'
-            confirm_message += '\n currently registered for the course.  Or there is a \n'
-            confirm_message += '\n typo in the email address provided.\n\n\n'
+            confirm_message += 'Either there is no student with that email\n'
+            confirm_message += 'registered for the course.  Or there is a \n'
+            confirm_message += 'typo in the email address provided.\n\n'
         if good_emails:
             logging.info('***RAM*** good_emails found = ' + str(good_emails))
             confirm_message += 'Students with the following emails\n'
@@ -233,11 +252,6 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
                 confirm_message += email + '\n'
           
             update_dict['students'] = ','.join(good_emails)  # New-line delimited
-
-        entity.labels = common_utils.list_to_text(
-            resources_display.LabelGroupsHelper.field_data_to_labels(
-                update_dict))
-        resources_display.LabelGroupsHelper.remove_label_field_data(update_dict)
 
         transforms.dict_to_entity(entity, update_dict)
 
@@ -251,8 +265,6 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
         transforms.send_json_response(
             self, return_code, confirm_message, {'key': key})
-#        return
-#        transforms.send_json_response(self, 200, 'Saved Section.')
 
     def delete(self):
         """Deletes a section."""
