@@ -70,13 +70,13 @@ class StudentAnswersEntity(entities.BaseEntity):
         'rvjUJMaLZ56s':'If/else greater than',
     }
         
+    
     @classmethod
     def record(cls, user, data):
         """Records new student tag-assessment into a datastore."""
-
+        students = cls.get_students()
 #        logging.debug('***RAM*** data ' + str(data))
         found = False
-        students = StudentAnswersEntity.all()
         for student in students:
 #            logging.debug('***RAM*** student ' + str(student))
             if student.user_id == user.user_id():
@@ -126,9 +126,9 @@ class StudentAnswersEntity(entities.BaseEntity):
         instance_id = data_json['instanceid']
         if 'answer' in data_json:           # Takes care of legacy events that are missing answer?
              answers = data_json['answer']
-             logging.warning('***RAM*** data contains answer property ' + str(data_json))
+#             logging.warning('***RAM*** data contains answer property ' + str(data_json))
         else:
-             logging.warning('***RAM*** data missing answer property ' + str(data_json))
+#             logging.warning('***RAM*** data missing answer property ' + str(data_json))
              answer = [False]           # An array b/c of multi choice with multiple correct answers
 #        answers = data_json['answer']     # An array b/c of multi choice with multiple correct answers
         score = data_json['score']
@@ -203,10 +203,13 @@ class StudentAnswersEntity(entities.BaseEntity):
     def get_students(cls, allow_cached = True):
         students = MemcacheManager.get(cls.memcache_key)
         if not allow_cached or students is None:
+            logging.warning('*********RAM*********** cache MISS')
             students = StudentAnswersEntity.all()
-            MemcacheManager.set(cls.memcache_key, students)
-        return students
-
+            MemcacheManager.set(cls.memcache_key, students, ttl=3600)
+            return students
+        else:
+            logging.warning('*********RAM*********** cache HIT')
+            return students
 
 #     @classmethod
 #     def get_scores(cls, student, course, force_refresh = True):
