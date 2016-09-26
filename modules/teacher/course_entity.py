@@ -147,7 +147,7 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         schema = SectionItemRESTHandler.SCHEMA()
 
         entity_dict = transforms.entity_to_dict(entity)
-        logging.warning('***RAM*** get entity = ' + str(entity_dict))
+#        logging.warning('***RAM*** get entity = ' + str(entity_dict))
 
         # Distinguish between adding a new entity and editing an existing entity
         # If this is a new Entity, its acadyr field will be blank.
@@ -193,7 +193,7 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
 
         if not self.assert_xsrf_token_or_fail(
                 request, 'section-put', {'key': key}):
-            logging.warning('***RAM*** put FAIL (saving) ' + str(request))
+#            logging.warning('***RAM*** put FAIL (saving) ' + str(request))
             return
 
 #        logging.warning('***RAM*** put (saving) ' + str(request))
