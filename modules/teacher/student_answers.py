@@ -205,7 +205,7 @@ class StudentAnswersEntity(entities.BaseEntity):
         if not allow_cached or students is None:
             logging.warning('*********RAM*********** cache MISS')
             students = StudentAnswersEntity.all()
-            MemcacheManager.set(cls.memcache_key, students, ttl=3600)
+            MemcacheManager.set(cls.memcache_key, students)  # ttl=3600  # time to live
             return students
         else:
             logging.warning('*********RAM*********** cache HIT')
