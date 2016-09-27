@@ -191,6 +191,8 @@ McQuestion.prototype.grade = function() {
     }
   });
   score = roundToTwoDecimalPlaces(Math.min(Math.max(score, 0), 1));
+  updateProgressIcon(that,score);  // Update progress icon for this question
+
   if (this.data.allOrNothingGrading) {
     score = score > _CORRECT_ANSWER_CUTOFF ? 1.0 : 0.0;
   }
@@ -239,8 +241,6 @@ McQuestion.prototype.grade = function() {
               .text(this.messages.feedbackHeading))
           .append($('<div>').append(this.data.defaultFeedback));
   }
-
-  updateProgressIcon(that,score);  // Update progress icon for this question
 
   return {
     answer: answer,
@@ -374,11 +374,14 @@ SaQuestion.prototype.onShowHint = function() {
 SaQuestion.prototype.grade = function() {
   var response = this.el.find(
       'div.qt-response > input, div.qt-response > textarea').val();
+  var score = 0;
+
   for (var i = 0; i < this.data.graders.length; i++) {
     var grader = this.data.graders[i];
     if (SaQuestion.MATCHERS[grader.matcher].matches(
         grader.response, response)) {
-      var score = Math.min(Math.max(parseFloat(grader.score), 0), 1);
+      score = Math.min(Math.max(parseFloat(grader.score), 0), 1);
+      updateProgressIcon(this,score);  // Update progress icon for this question
       return {
         answer: response,
         score: score,
@@ -387,9 +390,7 @@ SaQuestion.prototype.grade = function() {
       };
     }
   }
-
-  updateProgressIcon(that,score);  // Update progress icon for this question
-
+  updateProgressIcon(this,score);  // Update progress icon for this question
   return {
     answer: response,
     score: 0.0,
