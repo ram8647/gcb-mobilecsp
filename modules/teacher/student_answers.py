@@ -74,41 +74,37 @@ class StudentAnswersEntity(entities.BaseEntity):
     }
 
     @classmethod
-    def convert_keys(cls):
-        """ Converts key from id number to email. 
-            So we can lookup records by student email.
-        """
-#        email = 'ram8647@gmail.com'
-#        student = cls.all().filter('email', email)
-        students = cls.all()
-        keys = ''
-        n = 0
-        for student in students:
-           if student.email != 'ram8647@gmail.com' and student.email != 'messageman201@gmail.com':
-                email = student.email
-                new_student = cls(key_name = email)
-                new_student.answers_dict = student.answers_dict
-                new_student.user_id = student.user_id
-                new_student.email = student.email
-                new_student.recorded_on = student.recorded_on
-#                new_student.put()
-                n += 1
-                keys = keys + str(student.key()) + ','
-   
-        logging.warning('***RAM*** updated records, N = ' + str(n))
-        logging.warning('***RAM*** updated records, keys = ' + str(keys))
-
-    @classmethod
     def record(cls, user, data):
         """Records a student tag-assessment into a datastore.
   
            A tag-assessment includes a student attempt at a quiz question.
-
            The user's email is used as the key for the StudentAnswersEntity. 
-        """
-#        cls.convert_keys()
-#        return
 
+           Initially an randomly generated numeric id was used as the key
+           for StudentAnswersEntity.  That made it difficult to lookup 
+           student data from the datastore without having to perform a
+           very expensive query. So, we switched to an email-based key, which 
+           lets us retrieve a single record from the db with a key.get(). 
+
+           However, the datastore already had a couple of thousand records
+           in it and we were unable to revise it.  So this code works with
+           both the legacy and new formats.
+
+           Algorithm:
+              First try to get the Entity using the student's key.  If
+              that succeeds then proceed with updating the answers_dict.
+              If that fails, then try getting the Entity using a query
+              on the student's email (expensive).  If that succeeds, 
+              create a new Entity as a copy of the existing one with 
+              the email as its key.  If that fails, then this is the
+              occurrence for the student -- make a new Entity. 
+
+          For some students this will leave 2 Entities with the
+          same email. However, only the entity with the email-based
+          key is updated. 
+
+          We will eventually delete all numeric-based keys.
+        """
         # Try to get the student's data by email key from datastore
         email = user.email()
         key = db.Key.from_path('StudentAnswersEntity', email)
@@ -155,7 +151,6 @@ class StudentAnswersEntity(entities.BaseEntity):
             # from using an integer key to using the email as key.
             # THis will make retrievals way more efficient. 
             logging.warning('***RAM*** creating new ' + email)
-#            old_student = student.get()
             new_student = cls(key_name = email)
             new_student.answers_dict = student.answers_dict
             new_student.user_id = student.user_id
@@ -265,9 +260,6 @@ class StudentAnswersEntity(entities.BaseEntity):
         dict = {}
         if student_answers:
             dict = json.loads(student_answers.answers_dict)
-#        logging.debug('***RAM*** answers dict =  ' + str(dict))
-#        if student_answers:
-#            return dict
         return dict
 
     def put(self):
