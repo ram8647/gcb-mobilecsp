@@ -188,21 +188,24 @@ class QuizlyExerciseTag(tags.BaseTag):
         # NOTE:  gcbAudit() is in activity-generic.js.  For this to work, 'quizly' has to be
         #  added to TRACKABLE_COMPONENTS in models/progress.py
 
-        script += '<script>function updateProgressIcon(id, score) { '
-        script += '  var qname = window.quizlies.quizname';
+        script += '<script>function updateQuizlyProgressIcon(id, score) { '
+        script += '  var qname = window.quizlies.quizname;'
         script += '  var iframes = document.getElementsByTagName(\'iframe\');'
-        script += '  for (var i=0; i < iframes.length; i++) { '
-        script += '    var iframe = iframes[i];'
-        script += '    if (iframe.src.indexOf(qname) != -1) { '
-        script += '      var iconholder = iframe.previousSibling.previousSibling;'        
-        script += '     
-        script += '  var iconholder = div.previousSibling.previousSibling;'
+        script += '  var iconholder = \'\';'
         script += '  var innerHtml = \'\';'
-        script += '  if (score == 1) '
+        script += '  if (score >= 1) '
         script += '    innerHtml = \'<img alt="Completed" class="gcb-progress-icon" src="assets/img/completed.png" title="Completed">\';'
         script += '  else'
         script += '    innerHtml = \'<img alt="In_progress" class="gcb-progress-icon" src="assets/img/in_progress.png" title="In progress">\';'
-        script += '  iconholder.innerHTML = innerHtml;'
+        script += '  for (var i=0; i < iframes.length; i++) { '
+        script += '    var iframe = iframes[i];'
+        script += '    if (iframe.src.indexOf(qname) != -1) { '
+        script += '      iconholder = iframe.previousSibling.previousSibling;'        
+        script += '      break;'
+        script += '    }'
+        script += '  }'
+        script += '  if (iconholder != \'\') '
+        script += '    iconholder.innerHTML = innerHtml;'
         script += '}'
         script += '</script>'
 
@@ -223,7 +226,7 @@ class QuizlyExerciseTag(tags.BaseTag):
         script +=      '};'
         script +=      'gcbAudit(gcbCanRecordStudentEvents, auditDict, "tag-assessment", true);'
         script +=   '}'
-        script += '  updateProgressIcon(instanceid, score);'
+        script += '  updateQuizlyProgressIcon(instanceid, score);'
         script += '}'
         script += '</script>';
 

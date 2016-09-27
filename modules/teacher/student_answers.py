@@ -126,8 +126,8 @@ class StudentAnswersEntity(entities.BaseEntity):
         instance_id = data_json['instanceid']
         if 'answer' in data:
             answers = data_json['answer']     # An array b/c of multi choice with multiple correct answers
-        else
-            answer = False;
+        else:
+            answer = [False];
         score = data_json['score']
         type = data_json['type']
         quid = None
@@ -207,143 +207,6 @@ class StudentAnswersEntity(entities.BaseEntity):
         else:
             logging.warning('*********RAM*********** cache HIT')
             return students
-
-#     @classmethod
-#     def get_scores(cls, student, course, force_refresh = True):
-
-#         cached_date = datetime.datetime.now()
-#         if force_refresh:
-#             questions_data_dict = cls.build_questions_data(course.app_context)
-#         else:
-#             if not questions_data_dict:
-#                 questions_data_dict = cls.build_questions_data(course.app_context)
-
-#         answers_dict = cls.get_answers_dict_for_student(student)
-#         if answers_dict == {}:
-#             return {}
-
-#         # NOTE: We're ignoring question groups
-#         questions_by_quid = questions_data_dict['questions_by_question_id']['single']
-
-#         attempts = {}
-        
-#         # Add sequence numbers, descriptions, choices, possible points  to answers dict
-#         answers = answers_dict['answers']
-#         for unit_id in answers:
-#             for lesson_id in answers[unit_id]:
-#                 for instance_id in answers[unit_id][lesson_id]:
-
-#                     # Quizly question -- add description and choices and make some adjustments
-#                     if not instance_id in questions_data_dict['questions_by_usage_id']: 
-#                         if instance_id in cls.QUIZLY_DESCRIPTIONS:
-#                             answers[unit_id][lesson_id][instance_id]['description'] = \
-#                                 cls.QUIZLY_DESCRIPTIONS[instance_id]
-#                         else:
-#                             answers[unit_id][lesson_id][instance_id]['description'] = "Quizly " + instance_id
-#                         answers[unit_id][lesson_id][instance_id]['choices'] = \
-#                             [{'score':1, 'text':'T'}, {'score':0, 'text':'F'}]
-#                         sequence = random.randint(10,30)
-#                         answers[unit_id][lesson_id][instance_id]['sequence'] = sequence
-#                         answers[unit_id][lesson_id][instance_id]['question_id'] = instance_id
-#                         answers[unit_id][lesson_id][instance_id]['question_type'] = 'Quizly'
-#                         attempts[instance_id] = answers[unit_id][lesson_id][instance_id]['attempts']
-
-#                     # Regular question -- add sequence, weight, description and choices and possible points
-#                     else:
-#                         data = questions_data_dict['questions_by_usage_id'][instance_id]
-#                         sequence = data['sequence']
-#                         answers[unit_id][lesson_id][instance_id]['sequence'] = sequence
-#                         answers[unit_id][lesson_id][instance_id]['weight'] = data['weight']
-#                         quid = answers[unit_id][lesson_id][instance_id]['question_id']
-#                         question_info = questions_by_quid.get(quid, None)
-#                         attempts[quid] = answers[unit_id][lesson_id][instance_id]['attempts']
-
-#                         if question_info:
-#                             desc = question_info.dict['description']
-#                             answers[unit_id][lesson_id][instance_id]['description'] = desc
-#                             if 'choices' in question_info.dict:
-#                                 possible_score = 0
-#                                 choices = question_info.dict['choices']
-#                                 choices_scores_only = []
-#                                 i = 0
-
-#                                 # Iterate through choices and calculate total possible score, usually 1
-#                                 # If it's never != 1, maybe this can be eliminated
-#                                 for choice in choices:
-#                                     if float(choice['score']) > 0:
-#                                         possible_score += float(choice['score'])
-#                                     choices_scores_only.append(  {'score':choice['score'], 
-#                                                                   'text':chr(ord('A') + i) } )
-#                                     i += 1
-#                                 answers[unit_id][lesson_id][instance_id]['choices'] = choices_scores_only
-#                                 answers[unit_id][lesson_id][instance_id]['possible_points'] = possible_score
-                        
-#         # We were using instance_id as key. We need to return with sequence as key.
-#         newanswers = cls.replace_instanceid_with_sequence_key(answers)
-#         newdict = {}
-#         newdict['attempts'] = attempts
-#         newdict['scores'] = newanswers
-#         return newdict
-
-#     @classmethod 
-#     def replace_instanceid_with_sequence_key(cls, dict):
-#         newanswers = copy.deepcopy(dict)
-#         for unit_id in dict:
-#             for lesson_id in dict[unit_id]:
-#                 for instance_id in dict[unit_id][lesson_id]:
-#                     sequence = dict[unit_id][lesson_id][instance_id]['sequence']
-#                     pop = newanswers[unit_id][lesson_id].pop(instance_id)
-#                     newanswers[unit_id][lesson_id][sequence] = pop
-#         return newanswers
-
-#     @classmethod
-#     def build_questions_data(cls, app_context):
-#         logging.debug('***RAM***  Trace: build_questions_data() ')
-
-#         questions_by_usage_id = event_transforms.get_questions_by_usage_id(app_context)
-# #         logging.debug('***RAM*** questions_by_usage_id ' + str(questions_by_usage_id))
-# #         logging.debug('***RAM*** valid_question_ids ' + str(event_transforms.get_valid_question_ids()))
-# #         logging.debug('***RAM*** assessment_weights ' + str(event_transforms.get_assessment_weights(app_context)))
-# #         logging.debug('***RAM*** unscored_lesson_ids ' + str(event_transforms.get_unscored_lesson_ids(app_context)))
-# #        logging.debug('***RAM*** questions_by_question_id ' + str(cls._get_questions_by_question_id(questions_by_usage_id)))
-#         return {
-#             'questions_by_usage_id':
-#                 questions_by_usage_id,
-# #             'valid_question_ids': (
-# #                 event_transforms.get_valid_question_ids()),
-# #             'group_to_questions': (
-# #                 event_transforms.get_group_to_questions()),
-# #             'assessment_weights':
-# #                 event_transforms.get_assessment_weights(app_context),
-# #             'unscored_lesson_ids':
-# #                 event_transforms.get_unscored_lesson_ids(app_context),
-#             'questions_by_question_id':
-#                 cls._get_questions_by_question_id(questions_by_usage_id)
-#             }
-
-#     @classmethod
-#     def _get_questions_by_question_id(cls, questions_by_usage_id):
-#         ''' Retrieves every question in the course returning 
-#             them in a dict:  { id:questionDAO, ... }
-
-#             @param questions_by_usage_id.values() is a dict:
-#              {unit, lesson, sequence, weight, quid}
-#         '''
-#         ret = {}
-#         ret['single'] = {}
-#         ret['grouped'] = {}
-#         for question in questions_by_usage_id.values():
-#             question_single = QuestionDAO.load(question['id'])
-#             if question_single:
-#                 ret['single'][question['id']] = question_single
-#             else:
-#                 question_group = QuestionGroupDAO.load(question['id'])
-#                 if question_group:
-#                     ret['grouped'][question['id']] = {}
-#                     for item in question_group.items:
-#                         ret['grouped'][question['id']][item['question']] = QuestionDAO.load(item['question'])
-#         return ret
-
 
     def put(self):
         """Do the normal put() and also invalidate memcache."""

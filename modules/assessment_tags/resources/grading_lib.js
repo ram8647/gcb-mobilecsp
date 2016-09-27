@@ -106,6 +106,13 @@ function getRandomPermutation(size, random) {
   return target;
 }
 
+/**
+ * Mobile CSP CUSTOMIZATION.
+ * 
+ * Displays the appropriate blue dot as soon as the submit button is clicked.
+ * This is called from this file.  A corresponding function is included
+ * in quizly.py.
+ */ 
 function updateProgressIcon(question, score) {
   var id = question.id;
   var div = document.getElementById(id);
