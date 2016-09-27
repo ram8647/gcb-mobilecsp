@@ -51,58 +51,62 @@ class StudentAnswersEntity(entities.BaseEntity):
     # Static lookup tables
     questions_data_dict = None
 
+    # TODO: Duplicate over student_activities.py table.  Move to a single location.
     QUIZLY_DESCRIPTIONS = {  
-        'LXgF4NO50hNM':'Pause the Player',       # Unit 2
-        'BtQ8hSoGkeml':'Stop the Player',
-        'Dstsv7VuDQb5':'Stop Player if playing',
-        'twxBgieSEwqs':'If/else stop/start Player', 
-        'a3uBZXYSOJee':'Set background color',   # Unit 3
-        'pnhvzarYPPW1':'Set text color',
-        'G3qzTftPYKTe':'Increment a variable',
-        '4kITN7u5hdsO':'Initialize global variable',
-        'pCZugPUxlHeb':'Initializing',
-        '8T30OkUf5r1r':'Simple if/else',
-        'KQctST8skmaC':'Procedure to double a variable',
-        'v2m4Ks25S1MX':'Procedure to add globals',
-        'rCgLbJRceEbn':'Procedure to reset the score',          # Unit 4   
-        '7uowepixSjT4':'Procedure to calculate the hit rate',
-        'w18q4UWKxvlM':'Fix a bug in updateScore procedure',
-        'rvjUJMaLZ56s':'If/else greater than',
+        'LXgF4NO50hNM':'Quizly, Pause the Player',       # Unit 2
+        'BtQ8hSoGkeml':'Quizly, Stop the Player',
+        'Dstsv7VuDQb5':'Quizly, Stop Player if playing',
+        'twxBgieSEwqs':'Quizly, If/else stop/start Player', 
+        'a3uBZXYSOJee':'Quizly, Set background color',   # Unit 3
+        'pnhvzarYPPW1':'Quizly, Set text color',
+        'G3qzTftPYKTe':'Quizly, Increment a variable',
+        '4kITN7u5hdsO':'Quizly, Initialize global variable',
+        'pCZugPUxlHeb':'Quizly, Initializing',
+        '8T30OkUf5r1r':'Quizly, Simple if/else',
+        'KQctST8skmaC':'Quizly, Procedure to double a variable',
+        'v2m4Ks25S1MX':'Quizly, Procedure to add globals',
+        'rCgLbJRceEbn':'Quizly, Procedure to reset the score',          # Unit 4   
+        '7uowepixSjT4':'Quizly, Procedure to calculate the hit rate',
+        'w18q4UWKxvlM':'Quizly, Fix a bug in updateScore procedure',
+        'rvjUJMaLZ56s':'Quizly, If/else greater than',
+        'scgF2VSCjUv8':'Quizly, Simple if/else',    # Unit 5
+        'JatcV7u6GOer':'Quizly, If x greater than y',   
     }
-        
-    
+
     @classmethod
     def record(cls, user, data):
-        """Records new student tag-assessment into a datastore."""
-        students = cls.get_students()
-#        logging.debug('***RAM*** data ' + str(data))
-        found = False
-        for student in students:
-#            logging.debug('***RAM*** student ' + str(student))
-            if student.user_id == user.user_id():
-                student.answers_dict = cls.update_answers_dict(student, data, user)
-                student.recorded_on = datetime.datetime.now()
-                student.put()
-                found = True
-                return
-        if not found:
-            student = cls()
+        """Records a student tag-assessment into a datastore.
+  
+           A tag-assessment includes a student attempt at a quiz question.
+
+           The user's email is used as the key for the StudentAnswersEntity. 
+        """
+        email = user.email()
+        key = db.Key.from_path('StudentAnswersEntity', email)
+        logging.debug('***RAM*** email ' + email + ' key = ' + str(key))
+        student = db.get(key)
+        if student: 
+            student.answers_dict = cls.update_answers_dict(student, data, user)
+            student.recorded_on = datetime.datetime.now()
+            student.put()
+        else:
+            student = cls(key_name = email)
             dict = cls.update_answers_dict(None, data, user)
 #            logging.debug('***RAM*** student ' + str(dict))
             student.answers_dict = dict
             student.user_id = user.user_id()
             student.email = user.email() 
-        student.put()
+            student.put()
 
     @classmethod
     def update_answers_dict(cls, student, data, user):
-        if student:    # student already exists
+        if student:    # Student dict already exists
             data_json = json.loads(data)
             dict = json.loads(student.answers_dict)
             dict = cls.build_dict(dict, data, user)
             return json.dumps(dict)
         else:
-            dict = cls.build_dict(None, data, user)  # new student
+            dict = cls.build_dict(None, data, user)  # New student Dict
 #            logging.debug('***RAM*** dict ' + str(dict))
             return json.dumps(dict)
 
@@ -124,13 +128,10 @@ class StudentAnswersEntity(entities.BaseEntity):
         unit_id =  str(url[url.find('unit=') + len('unit=') : url.find('&lesson=')])
         lesson_id = str(url[ url.find('&lesson=') + len('&lesson=') : ])
         instance_id = data_json['instanceid']
-        if 'answer' in data_json:           # Takes care of legacy events that are missing answer?
+        if 'answer' in data_json:           # Takes care of SA_questions? that are missing answer?
              answers = data_json['answer']
-#             logging.warning('***RAM*** data contains answer property ' + str(data_json))
         else:
-#             logging.warning('***RAM*** data missing answer property ' + str(data_json))
              answer = [False]           # An array b/c of multi choice with multiple correct answers
-#        answers = data_json['answer']     # An array b/c of multi choice with multiple correct answers
         score = data_json['score']
         type = data_json['type']
         quid = None
@@ -191,162 +192,17 @@ class StudentAnswersEntity(entities.BaseEntity):
 
     @classmethod
     def get_answers_dict_for_student(cls, student):
-        students = cls.get_students()
-        scores = None
-        for stud in students:
-#            logging.debug('***RAM*** ' + str(stud) + ' ' + str(student))        
-            if stud.user_id == student.user_id:
-                return json.loads(stud.answers_dict)
+        """ Retrieve the answers dict for a student. """
+        email = student.email
+        logging.warning('***RAM*** get answers dict for student, email = ' + email)
+        key = db.Key.from_path('StudentAnswersEntity', email)
+        logging.debug('***RAM*** email ' + email + ' key = ' + str(key))
+        student_answers = db.get(key)
+        dict = json.loads(student_answers.answers_dict)
+#        logging.debug('***RAM*** answers dict =  ' + str(dict))
+        if student_answers:
+            return dict
         return {}
-        
-    @classmethod
-    def get_students(cls, allow_cached = True):
-        students = MemcacheManager.get(cls.memcache_key)
-        if not allow_cached or students is None:
-            logging.warning('*********RAM*********** cache MISS')
-            students = StudentAnswersEntity.all()
-            MemcacheManager.set(cls.memcache_key, students)  # ttl=3600  # time to live
-            return students
-        else:
-            logging.warning('*********RAM*********** cache HIT')
-            return students
-
-#     @classmethod
-#     def get_scores(cls, student, course, force_refresh = True):
-
-#         cached_date = datetime.datetime.now()
-#         if force_refresh:
-#             questions_data_dict = cls.build_questions_data(course.app_context)
-#         else:
-#             if not questions_data_dict:
-#                 questions_data_dict = cls.build_questions_data(course.app_context)
-
-#         answers_dict = cls.get_answers_dict_for_student(student)
-#         if answers_dict == {}:
-#             return {}
-
-#         # NOTE: We're ignoring question groups
-#         questions_by_quid = questions_data_dict['questions_by_question_id']['single']
-
-#         attempts = {}
-        
-#         # Add sequence numbers, descriptions, choices, possible points  to answers dict
-#         answers = answers_dict['answers']
-#         for unit_id in answers:
-#             for lesson_id in answers[unit_id]:
-#                 for instance_id in answers[unit_id][lesson_id]:
-
-#                     # Quizly question -- add description and choices and make some adjustments
-#                     if not instance_id in questions_data_dict['questions_by_usage_id']: 
-#                         if instance_id in cls.QUIZLY_DESCRIPTIONS:
-#                             answers[unit_id][lesson_id][instance_id]['description'] = \
-#                                 cls.QUIZLY_DESCRIPTIONS[instance_id]
-#                         else:
-#                             answers[unit_id][lesson_id][instance_id]['description'] = "Quizly " + instance_id
-#                         answers[unit_id][lesson_id][instance_id]['choices'] = \
-#                             [{'score':1, 'text':'T'}, {'score':0, 'text':'F'}]
-#                         sequence = random.randint(10,30)
-#                         answers[unit_id][lesson_id][instance_id]['sequence'] = sequence
-#                         answers[unit_id][lesson_id][instance_id]['question_id'] = instance_id
-#                         answers[unit_id][lesson_id][instance_id]['question_type'] = 'Quizly'
-#                         attempts[instance_id] = answers[unit_id][lesson_id][instance_id]['attempts']
-
-#                     # Regular question -- add sequence, weight, description and choices and possible points
-#                     else:
-#                         data = questions_data_dict['questions_by_usage_id'][instance_id]
-#                         sequence = data['sequence']
-#                         answers[unit_id][lesson_id][instance_id]['sequence'] = sequence
-#                         answers[unit_id][lesson_id][instance_id]['weight'] = data['weight']
-#                         quid = answers[unit_id][lesson_id][instance_id]['question_id']
-#                         question_info = questions_by_quid.get(quid, None)
-#                         attempts[quid] = answers[unit_id][lesson_id][instance_id]['attempts']
-
-#                         if question_info:
-#                             desc = question_info.dict['description']
-#                             answers[unit_id][lesson_id][instance_id]['description'] = desc
-#                             if 'choices' in question_info.dict:
-#                                 possible_score = 0
-#                                 choices = question_info.dict['choices']
-#                                 choices_scores_only = []
-#                                 i = 0
-
-#                                 # Iterate through choices and calculate total possible score, usually 1
-#                                 # If it's never != 1, maybe this can be eliminated
-#                                 for choice in choices:
-#                                     if float(choice['score']) > 0:
-#                                         possible_score += float(choice['score'])
-#                                     choices_scores_only.append(  {'score':choice['score'], 
-#                                                                   'text':chr(ord('A') + i) } )
-#                                     i += 1
-#                                 answers[unit_id][lesson_id][instance_id]['choices'] = choices_scores_only
-#                                 answers[unit_id][lesson_id][instance_id]['possible_points'] = possible_score
-                        
-#         # We were using instance_id as key. We need to return with sequence as key.
-#         newanswers = cls.replace_instanceid_with_sequence_key(answers)
-#         newdict = {}
-#         newdict['attempts'] = attempts
-#         newdict['scores'] = newanswers
-#         return newdict
-
-#     @classmethod 
-#     def replace_instanceid_with_sequence_key(cls, dict):
-#         newanswers = copy.deepcopy(dict)
-#         for unit_id in dict:
-#             for lesson_id in dict[unit_id]:
-#                 for instance_id in dict[unit_id][lesson_id]:
-#                     sequence = dict[unit_id][lesson_id][instance_id]['sequence']
-#                     pop = newanswers[unit_id][lesson_id].pop(instance_id)
-#                     newanswers[unit_id][lesson_id][sequence] = pop
-#         return newanswers
-
-#     @classmethod
-#     def build_questions_data(cls, app_context):
-#         logging.debug('***RAM***  Trace: build_questions_data() ')
-
-#         questions_by_usage_id = event_transforms.get_questions_by_usage_id(app_context)
-# #         logging.debug('***RAM*** questions_by_usage_id ' + str(questions_by_usage_id))
-# #         logging.debug('***RAM*** valid_question_ids ' + str(event_transforms.get_valid_question_ids()))
-# #         logging.debug('***RAM*** assessment_weights ' + str(event_transforms.get_assessment_weights(app_context)))
-# #         logging.debug('***RAM*** unscored_lesson_ids ' + str(event_transforms.get_unscored_lesson_ids(app_context)))
-# #        logging.debug('***RAM*** questions_by_question_id ' + str(cls._get_questions_by_question_id(questions_by_usage_id)))
-#         return {
-#             'questions_by_usage_id':
-#                 questions_by_usage_id,
-# #             'valid_question_ids': (
-# #                 event_transforms.get_valid_question_ids()),
-# #             'group_to_questions': (
-# #                 event_transforms.get_group_to_questions()),
-# #             'assessment_weights':
-# #                 event_transforms.get_assessment_weights(app_context),
-# #             'unscored_lesson_ids':
-# #                 event_transforms.get_unscored_lesson_ids(app_context),
-#             'questions_by_question_id':
-#                 cls._get_questions_by_question_id(questions_by_usage_id)
-#             }
-
-#     @classmethod
-#     def _get_questions_by_question_id(cls, questions_by_usage_id):
-#         ''' Retrieves every question in the course returning 
-#             them in a dict:  { id:questionDAO, ... }
-
-#             @param questions_by_usage_id.values() is a dict:
-#              {unit, lesson, sequence, weight, quid}
-#         '''
-#         ret = {}
-#         ret['single'] = {}
-#         ret['grouped'] = {}
-#         for question in questions_by_usage_id.values():
-#             question_single = QuestionDAO.load(question['id'])
-#             if question_single:
-#                 ret['single'][question['id']] = question_single
-#             else:
-#                 question_group = QuestionGroupDAO.load(question['id'])
-#                 if question_group:
-#                     ret['grouped'][question['id']] = {}
-#                     for item in question_group.items:
-#                         ret['grouped'][question['id']][item['question']] = QuestionDAO.load(item['question'])
-#         return ret
-
 
     def put(self):
         """Do the normal put() and also invalidate memcache."""
