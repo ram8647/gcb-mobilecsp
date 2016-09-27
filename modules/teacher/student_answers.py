@@ -74,6 +74,31 @@ class StudentAnswersEntity(entities.BaseEntity):
     }
 
     @classmethod
+    def convert_keys(cls):
+        """ Converts key from id number to email. 
+            So we can lookup records by student email.
+        """
+#        email = 'ram8647@gmail.com'
+#        student = cls.all().filter('email', email)
+        students = cls.all()
+        keys = ''
+        n = 0
+        for student in students:
+           if student.email != 'ram8647@gmail.com' and student.email != 'messageman201@gmail.com':
+                email = student.email
+                new_student = cls(key_name = email)
+                new_student.answers_dict = student.answers_dict
+                new_student.user_id = student.user_id
+                new_student.email = student.email
+                new_student.recorded_on = student.recorded_on
+#                new_student.put()
+                n += 1
+                keys = keys + str(student.key()) + ','
+   
+        logging.warning('***RAM*** updated records, N = ' + str(n))
+        logging.warning('***RAM*** updated records, keys = ' + str(keys))
+
+    @classmethod
     def record(cls, user, data):
         """Records a student tag-assessment into a datastore.
   
@@ -81,22 +106,61 @@ class StudentAnswersEntity(entities.BaseEntity):
 
            The user's email is used as the key for the StudentAnswersEntity. 
         """
+#        cls.convert_keys()
+#        return
+
+        # Try to get the student's data by email key from datastore
         email = user.email()
         key = db.Key.from_path('StudentAnswersEntity', email)
         logging.debug('***RAM*** email ' + email + ' key = ' + str(key))
         student = db.get(key)
+
         if student: 
+            #  If student (with email key) found
+            logging.warning('***RAM*** existing student key =  ' + email)
             student.answers_dict = cls.update_answers_dict(student, data, user)
             student.recorded_on = datetime.datetime.now()
             student.put()
         else:
-            student = cls(key_name = email)
-            dict = cls.update_answers_dict(None, data, user)
+            # Try to query the db by email to get student       
+            student = cls.get_student_by_email(email, user)
+            if student:
+                logging.warning('***RAM*** updating for ' + email)
+                student.answers_dict = cls.update_answers_dict(student, data, user)
+                student.recorded_on = datetime.datetime.now()
+                student.put()
+            else:           
+                # No student with that email in Db -- create a new Entity
+                logging.warning('***RAM*** creating new ' + email)
+                student = cls(key_name = email)
+                dict = cls.update_answers_dict(None, data, user)
 #            logging.debug('***RAM*** student ' + str(dict))
-            student.answers_dict = dict
-            student.user_id = user.user_id()
-            student.email = user.email() 
-            student.put()
+                student.answers_dict = dict
+                student.user_id = user.user_id()
+                student.email = user.email() 
+                student.put()
+
+    @classmethod
+    def get_student_by_email(cls, email, user):
+        logging.warning('***RAM*** get by email ' + email)
+        
+        # Fetch the student by query on the email
+        # If no hit, return None which will cause a new Entity
+        student = cls.all().filter('email',email).get()
+        if not student:
+            logging.warning('***RAM***  no hit for email ' + email)
+            return None 
+        else:
+            # Here were are converting the student's answers entity
+            # from using an integer key to using the email as key.
+            # THis will make retrievals way more efficient. 
+            logging.warning('***RAM*** creating new ' + email)
+#            old_student = student.get()
+            new_student = cls(key_name = email)
+            new_student.answers_dict = student.answers_dict
+            new_student.user_id = student.user_id
+            new_student.email = email
+            return new_student
 
     @classmethod
     def update_answers_dict(cls, student, data, user):
@@ -198,11 +262,13 @@ class StudentAnswersEntity(entities.BaseEntity):
         key = db.Key.from_path('StudentAnswersEntity', email)
         logging.debug('***RAM*** email ' + email + ' key = ' + str(key))
         student_answers = db.get(key)
-        dict = json.loads(student_answers.answers_dict)
-#        logging.debug('***RAM*** answers dict =  ' + str(dict))
+        dict = {}
         if student_answers:
-            return dict
-        return {}
+            dict = json.loads(student_answers.answers_dict)
+#        logging.debug('***RAM*** answers dict =  ' + str(dict))
+#        if student_answers:
+#            return dict
+        return dict
 
     def put(self):
         """Do the normal put() and also invalidate memcache."""
