@@ -106,6 +106,19 @@ function getRandomPermutation(size, random) {
   return target;
 }
 
+function updateProgressIcon(question, score) {
+  var id = question.id;
+  var div = document.getElementById(id);
+  var iconholder = div.previousSibling.previousSibling;
+  var innerHtml = '';
+  if (score == 1) 
+    innerHtml = '<img alt="Completed" class="gcb-progress-icon" src="assets/img/completed.png" title="Completed">';
+  else
+    innerHtml = '<img alt="In_progress" class="gcb-progress-icon" src="assets/img/in_progress.png" title="In progress">';
+  iconholder.innerHTML = innerHtml;
+}
+
+
 /**
  * A class to handle multiple choice questions.
  */
@@ -219,6 +232,8 @@ McQuestion.prototype.grade = function() {
               .text(this.messages.feedbackHeading))
           .append($('<div>').append(this.data.defaultFeedback));
   }
+
+  updateProgressIcon(that,score);  // Update progress icon for this question
 
   return {
     answer: answer,
@@ -365,6 +380,9 @@ SaQuestion.prototype.grade = function() {
       };
     }
   }
+
+  updateProgressIcon(that,score);  // Update progress icon for this question
+
   return {
     answer: response,
     score: 0.0,
