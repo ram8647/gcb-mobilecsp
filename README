@@ -68,6 +68,23 @@ Basic outline
 
 >>>>>>>>>>>>>>>>>>>>>>     CUSTOM STUFF        <<<<<<<<<<<<<<<<<<<<<<<<<
 
+Here are the parts to the core GCB that have been modified. See Github 
+for diffs. 
+
+* assets/lib 
+* controllers/privacy.py
+* models/progress.py
+* modules/assessment_tags/ - resources and templates
+* modules/core_ui -- missing toggle-button.css error
+* modules/course/courses.py
+* modules/quizly 
+* modules/skill_map/competency.py
+* modules/teacher
+* views/base_course.html
+* views/preview.html
+* views/privacy.html
+
+
 >>>>>>>>>>>>>>>>>>>>>>   Student Course Resources Tab   <<<<<<<<<<<<<<<
 -- Copy resources.py into controllers/
 -- Copy resources.html into views/
