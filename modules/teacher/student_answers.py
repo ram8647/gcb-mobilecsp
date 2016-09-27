@@ -124,10 +124,10 @@ class StudentAnswersEntity(entities.BaseEntity):
         unit_id =  str(url[url.find('unit=') + len('unit=') : url.find('&lesson=')])
         lesson_id = str(url[ url.find('&lesson=') + len('&lesson=') : ])
         instance_id = data_json['instanceid']
-        if 'answer' in data_json:           # Takes care of legacy events that are missing answer?
-             answers = data_json['answer']
-        else:
-             answer = [False]           # An array b/c of multi choice with multiple correct answers
+        if 'answer' in data:
+            answers = data_json['answer']     # An array b/c of multi choice with multiple correct answers
+        else
+            answer = False;
         score = data_json['score']
         type = data_json['type']
         quid = None
