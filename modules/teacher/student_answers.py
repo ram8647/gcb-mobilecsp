@@ -48,31 +48,6 @@ class StudentAnswersEntity(entities.BaseEntity):
     
     memcache_key = 'studentanswers'
 
-    # Static lookup tables
-    questions_data_dict = None
-
-    # TODO: Duplicate over student_activities.py table.  Move to a single location.
-    QUIZLY_DESCRIPTIONS = {  
-        'LXgF4NO50hNM':'Quizly, Pause the Player',       # Unit 2
-        'BtQ8hSoGkeml':'Quizly, Stop the Player',
-        'Dstsv7VuDQb5':'Quizly, Stop Player if playing',
-        'twxBgieSEwqs':'Quizly, If/else stop/start Player', 
-        'a3uBZXYSOJee':'Quizly, Set background color',   # Unit 3
-        'pnhvzarYPPW1':'Quizly, Set text color',
-        'G3qzTftPYKTe':'Quizly, Increment a variable',
-        '4kITN7u5hdsO':'Quizly, Initialize global variable',
-        'pCZugPUxlHeb':'Quizly, Initializing',
-        '8T30OkUf5r1r':'Quizly, Simple if/else',
-        'KQctST8skmaC':'Quizly, Procedure to double a variable',
-        'v2m4Ks25S1MX':'Quizly, Procedure to add globals',
-        'rCgLbJRceEbn':'Quizly, Procedure to reset the score',          # Unit 4   
-        '7uowepixSjT4':'Quizly, Procedure to calculate the hit rate',
-        'w18q4UWKxvlM':'Quizly, Fix a bug in updateScore procedure',
-        'rvjUJMaLZ56s':'Quizly, If/else greater than',
-        'scgF2VSCjUv8':'Quizly, Simple if/else',    # Unit 5
-        'JatcV7u6GOer':'Quizly, If x greater than y',   
-    }
-
     @classmethod
     def record(cls, user, data):
         """Records a student tag-assessment into a datastore.
