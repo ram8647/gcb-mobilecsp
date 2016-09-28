@@ -11,8 +11,9 @@
     var ESC_KEY = 27;
 
     function setUpModalWindow() {
+      console.log('Setting up  modal');
       // Bind click on background and on close button to close window
-      $("#question-background, #modal-window .question-close-button").on("click", function(e) {
+      $("#question-background, #modal-window .gcb-button").on("click", function(e) {
 	closeModal();
       });
       $("#question-container > div").hide();
@@ -20,16 +21,20 @@
 
     function openModal() {
       // Bind Esc press to close window
+      document.getElementById("student-detail-section").style.opacity = "0.25";
       $(document).on("keyup.modal", function(e) {
-	if (e.keyCode == ESC_KEY) {
+	  //	if (e.keyCode == ESC_KEY) {
 	    closeModal();
-	}
+	    //	}
       });
       $("#modal-window").show();
+      document.getElementById('question-close-button').style.visibility='visible';
     }
 
     function closeModal() {
       $("#modal-window, #question-container > div").hide();
       //Remove Esc binding
+      console.log('Closing modal');
+      document.getElementById("student-detail-section").style.opacity = "1";
       $(document).off("keyup.modal");
     }

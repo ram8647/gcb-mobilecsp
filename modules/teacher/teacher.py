@@ -748,7 +748,13 @@ def register_module():
         (TeacherDashboardHandler.DASHBOARD_URL, TeacherDashboardHandler)
     ]
 
+    # These are necessary to access the js and css resources.
     global_routes = [
+      (RESOURCES_PATH + '/js/modal-window.js', tags.ResourcesHandler),
+      (RESOURCES_PATH + '/js/tipped.js', tags.ResourcesHandler),
+      (RESOURCES_PATH + '/css/question_preview.css', tags.ResourcesHandler),
+      (RESOURCES_PATH + '/css/student_progress.css', tags.ResourcesHandler),
+      (RESOURCES_PATH + '/css/tipped.css', tags.ResourcesHandler),
     ]
 
     dashboard.DashboardHandler.add_sub_nav_mapping(

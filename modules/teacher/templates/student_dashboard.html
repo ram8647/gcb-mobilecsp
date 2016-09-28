@@ -15,9 +15,8 @@
 
 {% block assets %}
   {{ super() }}
-  <!-- BUG:  This should go into modules/teacher/resources/css but it doesn't work there. -->
-  <link rel="stylesheet" type="text/css" href="assets/lib/lessons/student_progress.css" />
-  <link rel="stylesheet" type="text/css" href="assets/lib/lessons/question_preview.css" /> 
+  <link rel="stylesheet" type="text/css" href="/modules/teacher/resources/css/student_progress.css" />
+  <link rel="stylesheet" type="text/css" href="/modules/teacher/resources/css/question_preview.css" /> 
   <link rel="stylesheet" type="text/css" href="assets/lib/lessons/tipped.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/css/material-design-iconic-font.min.css">
   <style> 
@@ -54,7 +53,7 @@
   }
   </style>
 
-  <script type="text/javascript" src="assets/lib/lessons/modal-window.js"></script>
+  <script type="text/javascript" src="/modules/teacher/resources/js/modal-window.js"></script>
   <script src="assets/lib/lessons/tipped.js"></script>
 
   <script>
