@@ -165,7 +165,7 @@ class StudentAnswersEntity(entities.BaseEntity):
         if 'answer' in data_json:           # Takes care of SA_questions? that are missing answer?
              answers = data_json['answer']
         else:
-             answer = [False]           # An array b/c of multi choice with multiple correct answers
+             answers = [False]           # An array b/c of multi choice with multiple correct answers
         score = data_json['score']
         type = data_json['type']
         quid = None
