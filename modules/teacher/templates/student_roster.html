@@ -358,16 +358,31 @@
         </tbody>
        </table>
       <hr>
-
-        <table id="buttons-table"> 
+      <div>
+	<div style="float:left">
+	   <h2>Students</h2>
+	</div>
+	<div style="float:right">
+	    <span class="hover help yui-wk-div" data-id="add/remove">
+	      <a href="teacher?action=edit_section&key={{ section.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">
+		 <button class="gcb-button" type="submit">Add / Remove Students</button>
+	      </a>
+	    </span>
+	</div>
+      </div>
+      <br /><br />
+       <table>
          <tr>
           <td>
-            <span class="hover help yui-wk-div" data-id="add/remove">
-              <a href="teacher?action=edit_section&key={{ section.key }}" class="gcb-list__icon gcb-list__iconrowhover material-icons">
-                 <button class="gcb-button" type="submit">Add / Remove Students</button>
-              </a>
-            </span>
           </td>
+        </tr>
+       </table>
+
+        {% if students %}
+        <div class="gcb-list gcb-list--autostripe xsrf-token-holder"
+             data-status-xsrf-token-teacher-dashboard="{{ status_xsrf_token }}">
+        <table id="buttons-table"> 
+         <tr>
           <td>
            <span class="hover help yui-wk-div" data-id="unitselect"><label><b>Unit: </b></label></span>
            <select id="unit-select-widget"  class="unit-select">
@@ -389,10 +404,6 @@
          </tr>
         </table>
 
-        {% if students %}
-        <div class="gcb-list gcb-list--autostripe xsrf-token-holder"
-             data-status-xsrf-token-teacher-dashboard="{{ status_xsrf_token }}">
-         <h2>Students</h2>
          <table>
           <thead>
            <tr>
