@@ -112,23 +112,39 @@
     function update_section_stats(unit_id, lesson_id) {
       for (var i=0; i < studentsJs.length; i++) {
          var student = studentsJs[i];
-         var unit_cell = document.getElementById('student-unit-progress-cell-' + (i+1)); // table cells are 1-indexed
-         var lesson_cell = document.getElementById('student-lesson-progress-cell-' + (i+1)); // table cells are 1-indexed
-         var quizzes_cell = document.getElementById('student-quizzes-cell-' + (i+1)); // table cells are 1-indexed
+         var unit_cell = document.getElementById('student-unit-status-holder-' + (i+1)); // table cells are 1-indexed
+         var unit_icon = document.getElementById('student-unit-icon-holder-' + (i+1)); // table cells are 1-indexed
+         var lesson_cell = document.getElementById('student-lesson-status-holder-' + (i+1));
+         var lesson_icon = document.getElementById('student-lesson-icon-holder-' + (i+1));  // icon
+         var quizzes_cell = document.getElementById('student-quizzes-cell-' + (i+1)); 
          {% if has_scores %}
            var quiz_ratio = get_quiz_ratio(student, unit_id,lesson_id);
            quizzes_cell.innerHTML = quiz_ratio;
          {% endif %}
          if (unit_id != 'course_completion') {
-           unit_cell.innerHTML = student['progress_dict']['unit_completion'][unit_id];
+           var unit_completion = student['progress_dict']['unit_completion'][unit_id];
+           unit_cell.innerHTML = unit_completion;
+           if (unit_completion == 100) {
+               unit_icon.innerHTML = '<img src="assets/img/completed.png"></img>';
+           } else if (unit_completion == 0) {
+               unit_icon.innerHTML = '<img src="assets/img/not_started.png"></img>';
+           } else {
+               unit_icon.innerHTML = '<img src="assets/img/in_progress.png"></img>';
+           }
            if (lesson_id != "NA") {
              var lesson_prog =  student['progress_dict']['lessons_progress'][unit_id][lesson_id];
-             if (lesson_prog == 2)
+             if (lesson_prog == 2) {
                lesson_cell.innerHTML =  'Completed';
-             else if (lesson_prog == 1)
+               lesson_icon.innerHTML = '<img src="assets/img/completed.png"></img>';
+             }
+             else if (lesson_prog == 1) {
                lesson_cell.innerHTML =  'In progress';
-             else
+               lesson_icon.innerHTML = '<img src="assets/img/in_progress.png"></img>';
+             }
+             else {
                lesson_cell.innerHTML =  'Not started';
+               lesson_icon.innerHTML = '<img src="assets/img/not_started.png"></img>';
+             }
            }
            else
              lesson_cell.innerHTML = "N/A";
@@ -430,10 +446,14 @@
                 {{ student.progress_dict.course_progress }}
              </td>
              <td id="student-unit-progress-cell-{{loop.index}}">
-                N/A
+             <span id="student-unit-icon-holder-{{loop.index}}"></span>
+             &nbsp;
+             <span id="student-unit-status-holder-{{loop.index}}">N/A</span>
              </td>
              <td id="student-lesson-progress-cell-{{loop.index}}">
-               N/A
+             <span id="student-lesson-icon-holder-{{loop.index}}"></span>
+             &nbsp;
+             <span id="student-lesson-status-holder-{{loop.index}}">N/A</span>
              </td> 
              {% if has_scores %}
                <td id="student-quizzes-cell-{{loop.index}}">
