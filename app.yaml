@@ -99,6 +99,10 @@ handlers:
   script: main.app
   login: admin
   secure: always
+- url: /assets/lib/quizly/all*.js
+  upload: assets/lib/quizly/all*.js
+  static_files: assets/lib/quizly/all*.js
+  expiration: 5m
 - url: /.*
   script: main.app
   secure: always
