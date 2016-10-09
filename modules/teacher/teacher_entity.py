@@ -35,6 +35,8 @@ from models.models import Student
 # In our module
 import messages
 
+GLOBAL_DEBUG = False
+
 class TeacherEntity(entities.BaseEntity):
 
     """A class that represents a persistent database entity of teacher."""
@@ -195,11 +197,13 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         schema = TeacherItemRESTHandler.SCHEMA()
 
         entity_dict = transforms.entity_to_dict(entity)
-#        logging.warning('***RAM*** get entity = ' + str(entity_dict))
+        if GLOBAL_DEBUG:
+            logging.warning('***RAM*** get entity = ' + str(entity_dict))
 
         # Distinguish between adding a new entity and editing and existing entity
         # If this is a new Entity, it won't have a user_id yet.
-#        logging.warning('***RAM*** user_id ' + str(entity_dict['user_id']))
+        if GLOBAL_DEBUG:
+            logging.warning('***RAM*** user_id ' + str(entity_dict['user_id']))
         if entity_dict['user_id'] or entity_dict['email'] != '':
             entity_dict['mode'] = 'Edit'
         else:
@@ -224,7 +228,8 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
         key = request.get('key')
         edit_mode = request.get('mode')
 
-#        logging.warning('***RAM*** put request = ' + str(request))
+        if GLOBAL_DEBUG:
+            logging.warning('***RAM*** put request = ' + str(request))
 
         if not self.assert_xsrf_token_or_fail(
                 request, 'teacher-put', {'key': key}):
@@ -263,7 +268,8 @@ class TeacherItemRESTHandler(utils.BaseRESTHandler):
                         self, 404, 'MobileCSP: User is already registered as a teacher ' + update_dict['email'], {'key': key})
                     return
 
-#        logging.debug('****RAM**** teacher id ' + str(user.user_id))
+        if GLOBAL_DEBUG:
+            logging.debug('****RAM**** teacher id ' + str(user.user_id))
 
         # Store the user_id
         update_dict['user_id'] = user.user_id

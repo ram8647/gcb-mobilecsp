@@ -583,6 +583,7 @@ class UnitLessonCompletionTracker(object):
         lesson_id = split_event_key[3]
 #        logging.warning('***RAM*** _update_lesson ' + str(unit_id) + ' ' + str(lesson_id))
 
+#       CUSTOMIZATION: Forces reset of progress after wrong answer#
 #         if self._get_entity_value(progress, event_key) == self.COMPLETED_STATE:
 #             return
 
@@ -637,6 +638,7 @@ class UnitLessonCompletionTracker(object):
         unit_id = split_event_key[1]
         lesson_id = split_event_key[3]
 
+#       CUSTOMIZATION: Forces reset of progress after wrong answer#
 #         if self._get_entity_value(progress, event_key) == self.COMPLETED_STATE:
 #             logging.warning('***RAM*** update_html ALREADY COMPLETED ' )
 #             return
@@ -932,7 +934,7 @@ class UnitLessonCompletionTracker(object):
         status = 0
         
         if student:
-            logging.warning('***RAM*** get_component_status DATASTORE OP ' + str(cpt_id) + ' = ' + str(attempts) + ',' + str(score))
+#            logging.warning('***RAM*** get_component_status DATASTORE OP ' + str(cpt_id) + ' = ' + str(attempts) + ',' + str(score))
             student_answers = StudentAnswersEntity.get_answers_dict_for_student(student)
         if student_answers:
 #            logging.warning('***RAM*** cpt_id ' + str(cpt_id) + ' ' + str(lesson_id) + ' ' + str(unit_id))
@@ -963,13 +965,6 @@ class UnitLessonCompletionTracker(object):
 
         status = self.get_component_status(unit_id, lesson_id, cpt_id, student)
         return status == 2
-
-#         if score != None:
-#             value = score
-#         result = value > 0
-#         logging.warning('***RAM*** is_component_completed =  ' + str(cpt_id) + ' = ' + str(result))
-# #        return value is not None and value > 0
-#         return result
 
     def is_assessment_completed(self, progress, assessment_id):
         value = self._get_entity_value(

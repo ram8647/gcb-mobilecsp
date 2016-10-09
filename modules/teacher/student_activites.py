@@ -19,6 +19,8 @@ from models.models import MemcacheManager
 
 from models.progress import UnitLessonCompletionTracker
 
+GLOBAL_DEBUG = False
+
 class ActivityScoreParser(jobs.MapReduceJob):
     """
         Class to parse the data returned from query of Event activities.
@@ -135,14 +137,13 @@ class ActivityScoreParser(jobs.MapReduceJob):
          if not instance_id in self.quizly_desc:
              return
 
-#        logging.debug('***RAM*** A question with instance_id = ' + str(instance_id) +
-#          ' and no quid and location = ' + str(data['location']))
+         if GLOBAL_DEBUG:
+             logging.debug('***RAM*** A question with instance_id = ' + str(instance_id) +
+              ' and no quid and location = ' + str(data['location']))
          url = data['location']
          quizly_unit_id =  int(url[url.find('unit=') + len('unit=') : url.find('&lesson=')])
          quizly_lesson_id = int(url[ url.find('&lesson=') + len('&lesson=') : ])
          quizly_score = data['score']
-#          if instance_id == 'rCgLbJRceEbn' or instance_id == '7uowepixSjT4':
-#              logging.warning('***RAM*** rCgLbJRceEbn data = ' + str(data))
 
          if 'answer' in data:           # Takes care of legacy events that are missing answer?
              quizly_answer = data['answer']
@@ -186,13 +187,15 @@ class ActivityScoreParser(jobs.MapReduceJob):
          for seq in lesson_answers:
              if lesson_answers[seq]['question_id'] == instance_id:      # Quizly already there
                  found = True
-#                logging.debug('***RAM*** Quizly found answer for seq = ' + str(seq))
+                 if GLOBAL_DEBUG:
+                     logging.debug('***RAM*** Quizly found answer for seq = ' + str(seq))
                  if lesson_answers[seq]['timestamp'] < timestamp:      # Already there check time
                      question_answer_dict['sequence'] = seq
                      lesson_answers[seq] = question_answer_dict        # Replace it
          if not found:
              lesson_answers[quizly_sequence] = question_answer_dict    # Add Quizly
-#             logging.debug('***RAM*** Q ' + str(quizly_unit_id) + ' ' + str(quizly_lesson_id) + ' answers after ' + str(lesson_answers))
+             if GLOBAL_DEBUG:
+                 logging.debug('***RAM*** Q ' + str(quizly_unit_id) + ' ' + str(quizly_lesson_id) + ' answers after ' + str(lesson_answers))
 
          #  Add the Quizly exercise into the student's activity_scores
          unit_answers[quizly_lesson_id] = lesson_answers
@@ -215,7 +218,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
         # answers is the unpacked answers from the Event query
         for answer in answers:
-#           logging.debug('***RAM*** answer.question.id = ' + str(answer.question_id) + ' type= ' + str(answer.question_type) + ' s= ' + student.email)
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** answer.question.id = ' + str(answer.question_id) + ' type= ' + str(answer.question_type) + ' s= ' + student.email)
 
         # Count the number of attempts for each answer by the student
             if not student.email in self.num_attempts_dict:
@@ -225,9 +229,6 @@ class ActivityScoreParser(jobs.MapReduceJob):
                 self.num_attempts_dict[student.email][answer.question_id] = 1
             else:
                 self.num_attempts_dict[student.email][answer.question_id] += 1
-
-#            logging.debug('***RAM*** parse ' + str(answer.unit_id) + ' ' +
-#                 str(answer.lesson_id) + ' ' + str(answer.sequence) + ' score:' + str(answer.score))
 
             # Create a dict for this answer
             question_answer_dict = {}
@@ -243,16 +244,19 @@ class ActivityScoreParser(jobs.MapReduceJob):
             question_answer_dict['weighted_score'] = answer.weighted_score
             question_answer_dict['tallied'] = answer.tallied
 
-    #        logging.debug('***RAM*** Q ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' unit answer before ' + str(unit_answers))
-    #        logging.debug('***RAM*** McQ ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' answers before ' + str(lesson_answers))
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** Q ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' unit answer before ' + str(unit_answers))
+                logging.debug('***RAM*** McQ ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' answers before ' + str(lesson_answers))
 
             # If the timestamp on this event is after the timestamp on a previous score do an update
             if answer.sequence in lesson_answers and lesson_answers[answer.sequence]['timestamp'] < timestamp:
-    #            logging.debug('***RAM*** lesson answers timestamp ' + str(lesson_answers[answer.sequence]) + ' < ' + str(timestamp))
+                if GLOBAL_DEBUG:
+                    logging.debug('***RAM*** lesson answers timestamp ' + str(lesson_answers[answer.sequence]) + ' < ' + str(timestamp))
                 lesson_answers[answer.sequence] = question_answer_dict
             elif answer.sequence not in lesson_answers:
                 lesson_answers[answer.sequence] = question_answer_dict
-    #        logging.debug('***RAM*** McQ ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' answers after ' + str(lesson_answers))
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** McQ ' + str(answer.unit_id) + ' ' + str(answer.lesson_id) + ' answers after ' + str(lesson_answers))
 
         #  Add scores for this question into the student's activity_scores
         unit_answers[question_info['lesson']] = lesson_answers
@@ -282,7 +286,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
         if activity_attempt.source == 'tag-assessment':
             data = transforms.loads(activity_attempt.data)
             instance_id = data['instanceid']
-#            logging.debug('***********RAM************** data[instanceid] = ' + instance_id)
+            if GLOBAL_DEBUG:
+                logging.debug('***********RAM************** data[instanceid] = ' + instance_id)
             timestamp = int(
                 (activity_attempt.recorded_on - datetime.datetime(1970, 1, 1)).total_seconds())
 
@@ -296,7 +301,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
             #  Get this student's answers so far
             student_answers = self.activity_scores.get(student.email, {})
-#            logging.debug('***RAM*** student answers = ' + str(student_answers))
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** student answers = ' + str(student_answers))
 
             answers = event_transforms.unpack_check_answers(            # No Quizly answers in here
                 data, questions, valid_question_ids, assessment_weights,
@@ -312,7 +318,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     self.parse_question_scores(instance_id, questions, student_answers, answers, student, timestamp)
             except Exception as e:
                 logging.error('***********RAM************** bad instance_id: %s %s\n%s', str(instance_id), e, traceback.format_exc())
-#        logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
+        if GLOBAL_DEBUG:       
+            logging.debug('***RAM*** activity_scores ' + str(self.activity_scores))
         return self.activity_scores
 
     def build_missing_score(self, question, question_info, student_id, unit_id, lesson_id, sequence=-1):
@@ -344,7 +351,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
             if 'choices' in question_info.dict:
                 choices = question_info.dict['choices']
 
-#                logging.debug('***RAM*** choices = ' + str(choices))
+                if GLOBAL_DEBUG:
+                    logging.debug('***RAM*** choices = ' + str(choices))
 
                 # Calculate total possible points for questions by iterating
                 # through the answer choices and summing their individual values.
@@ -362,7 +370,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
                     # We don't need the questions and answers text.
                     choices_scores_only.append( {'score': choice['score'], 'text': chr(ord('A') + i) } )
                     i = i + 1
-#                logging.debug('***RAM*** scores only = ' + str(choices_scores_only))
+                if GLOBAL_DEBUG:
+                    logging.debug('***RAM*** scores only = ' + str(choices_scores_only))
 
             elif 'graders' in question_info.dict:
                 choices = question_info.dict['graders']
@@ -377,8 +386,9 @@ class ActivityScoreParser(jobs.MapReduceJob):
         #   construct a partial question_answer_dict with default values.  Otherwise
         #   fill in the existing dict with values from the student's question_answer.
         if not question_answer:
-#             logging.debug('***RAM*** Initializing dict for ' +
-#                 str(unit_id) + ' ' + str(lesson_id) + ' ' + str(sequence))
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** Initializing dict for ' +
+                     str(unit_id) + ' ' + str(lesson_id) + ' ' + str(sequence))
             question_answer_dict = {}
             question_answer_dict['unit_id'] = unit_id
             question_answer_dict['lesson_id'] = lesson_id
@@ -399,9 +409,10 @@ class ActivityScoreParser(jobs.MapReduceJob):
             lesson = unit.get(lesson_id, {})
             lesson[sequence] = question_answer_dict
         else:
-#             logging.debug('***RAM*** Updating dict for ' +
-#                 str(question_answer['unit_id']) + ' ' + str(question_answer['lesson_id']) + ' ' + str(question_answer['sequence']) 
-#                 + ' score=' + str(question_answer['score']))
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** Updating dict for ' +
+                    str(question_answer['unit_id']) + ' ' + str(question_answer['lesson_id']) + ' ' + str(question_answer['sequence']) 
+                    + ' score=' + str(question_answer['score']))
             question_answer_dict = {}
             question_answer_dict['unit_id'] = question_answer['unit_id']
             question_answer_dict['lesson_id'] = question_answer['lesson_id']
@@ -450,7 +461,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
     def get_student_completion_data(cls, course):
         """Retrieves student completion data for the course."""
 
-#        logging.debug('***RAM*** get_student_completion_data ' + str(course))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** get_student_completion_data ' + str(course))
         completion_tracker = UnitLessonCompletionTracker(course)
         questions_dict = completion_tracker.get_id_to_questions_dict()
 #         for q in questions_dict:
@@ -494,7 +506,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
             #  Launch a background Query for each student's activity data.  This is expensive.
             for user_id in student_user_ids:
-#                 logging.debug('***RAM*** launching a query for student ' + str(user_id))
+#                if GLOBAL_DEBUG:
+#                     logging.debug('***RAM*** launching a query for student ' + str(user_id))
                 mapper = models_utils.QueryMapper(
                     EventEntity.all().filter('user_id in', [user_id])       \
                                      .filter('recorded_on  >= ', cls.CUTOFF_DATE), \
@@ -502,7 +515,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
 
                 # Callback function -- e.g., 45-50 callbacks per query
                 def map_fn(activity_attempt):
-#                    logging.debug('***RAM*** map_fn ' + str(activity_attempt))
+#                    if GLOBAL_DEBUG:
+#                     logging.debug('***RAM*** map_fn ' + str(activity_attempt))
                     activityParser.parse_activity_scores(activity_attempt)
 
                 mapper.run(map_fn)
@@ -570,7 +584,8 @@ class ActivityScoreParser(jobs.MapReduceJob):
         score_data['date'] = cached_date
         score_data['scores'] = activityParser.activity_scores
         score_data['attempts'] = activityParser.num_attempts_dict
-        logging.debug('***RAM*** get_activity_scores returning scores: ' + str(score_data['scores']))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** get_activity_scores returning scores: ' + str(score_data['scores']))
 
         return score_data
 

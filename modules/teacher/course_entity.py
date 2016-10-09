@@ -39,6 +39,8 @@ from models.models import Student
 import messages
 from teacher_entity import TeacherRights
 
+GLOBAL_DEBUG = False
+
 class CourseSectionEntity(entities.BaseEntity):
 
     """Course section information"""
@@ -147,7 +149,8 @@ class SectionItemRESTHandler(utils.BaseRESTHandler):
         schema = SectionItemRESTHandler.SCHEMA()
 
         entity_dict = transforms.entity_to_dict(entity)
-#        logging.warning('***RAM*** get entity = ' + str(entity_dict))
+        if GLOBAL_DEBUG:
+            logging.warning('***RAM*** get entity = ' + str(entity_dict))
 
         # Distinguish between adding a new entity and editing an existing entity
         # If this is a new Entity, its acadyr field will be blank.

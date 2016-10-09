@@ -61,6 +61,8 @@ from teacher_entity import TeacherRights
 from student_activites import ActivityScoreParser
 from student_answers import StudentAnswersEntity
 
+GLOBAL_DEBUG = False
+
 MODULE_NAME = 'teacher'
 MODULE_TITLE = 'Teacher Dashboard'
 
@@ -150,7 +152,8 @@ class TeacherHandlerMixin(object):
                     section['date'] = (
                         date - datetime.datetime(1970, 1, 1)).total_seconds() * 1000
 
-                logging.debug('***RAM*** format template section = ' + str(section))
+                if GLOBAL_DEBUG:
+                    logging.debug('***RAM*** format template section = ' + str(section))
 
                 # Add 'edit' and 'delete' actions to each section that will be displayed
 
@@ -221,8 +224,9 @@ class TeacherDashboardHandler(
         items = TeacherEntity.get_teachers()
         items = TeacherRights.apply_rights(self, items)
         for teacher in items:
-#            logging.debug('***RAM*** teacher = ' + str(teacher.email))
-#            logging.debug('***RAM*** user ' + str(users.User.email(user)))
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** teacher = ' + str(teacher.email))
+                logging.debug('***RAM*** user ' + str(users.User.email(user)))
             if teacher.email == user_email:
                 return True
         return False
@@ -272,7 +276,6 @@ class TeacherDashboardHandler(
         self.template_value['navbar'] = {'teacher': True}
         self.template_value['resources_path'] = RESOURCES_PATH
         url = self.request.get('url')
-#        logging.warning('***RAM*** teacher get_question_preview ' + url)
         if url ==  '':
             self.template_value['question'] = tags.html_to_safe_dom(
                 '<question quid="{}">'.format(self.request.get('quid')), self)
@@ -315,7 +318,8 @@ class TeacherDashboardHandler(
             sections = CourseSectionEntity.get_sections()
             sections = TeacherRights.apply_rights(self, sections)
 
-            logging.debug('***RAM*** Trace: get_edit_sections')
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** Trace: get_edit_sections')
 
             # self._render will render the SECTIONS template
             self.template_value['teacher'] = self.format_dashboard_template(sections, user_email)
@@ -334,7 +338,8 @@ class TeacherDashboardHandler(
             self.error(401)
             return
 
-        logging.debug('***RAM** get_add_section')
+        if GLOBAL_DEBUG: 
+            logging.debug('***RAM** get_add_section')
         entity = CourseSectionEntity.make('', '', '', True)
         entity.put()
 
@@ -361,7 +366,8 @@ class TeacherDashboardHandler(
                 SectionItemRESTHandler.URL, key, 'section-delete'),
             display_types=schema.get_display_types())
 
-        logging.debug('***RAM** get_edit_section rendering page')
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM** get_edit_section rendering page')
         self.template_value['main_content'] = form_html;
         self._render()
 
@@ -371,7 +377,8 @@ class TeacherDashboardHandler(
             self.error(401)
             return
 
-        logging.debug('***RAM** post_delete_section')
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM** post_delete_section')
         key = self.request.get('key')
         entity = CourseSectionEntity.get(key)
         if entity:
@@ -406,7 +413,8 @@ class TeacherDashboardHandler(
     def calculate_lessons_progress(self, lessons_progress):
         """ Returns a dict summarizing student progress on the lessons in each unit."""
 
-#        logging.debug('***RAM*** lessons_progress ' + str(lessons_progress))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** lessons_progress ' + str(lessons_progress))
         lessons = {}
         total = 0
         for key in lessons_progress:
@@ -415,7 +423,8 @@ class TeacherDashboardHandler(
                 total += 1
             lessons[str(key)] = progress
         lessons['progress'] = str(round(total / len(lessons) * 100, 2))
-#        logging.debug('***RAM*** calc lessons = ' + str(lessons))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** calc lessons = ' + str(lessons))
         return lessons
                             
     def calculate_student_progress_data(self, student, course, tracker, units):
@@ -433,11 +442,13 @@ class TeacherDashboardHandler(
         unit_progress_data = {}
         for key in unit_progress_raw:
             unit_progress_data[str(key)] = str(round(unit_progress_raw[key] * 100,2));
-#        logging.debug('***RAM*** unit_progress_data ' + str(unit_progress_data))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** unit_progress_data ' + str(unit_progress_data))
 
         # An object that summarizes student progress
         student_progress = tracker.get_or_create_progress(student)
-#        logging.debug('***RAM*** student_progress ' + str(student_progress))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** student_progress ' + str(student_progress))
 
         # Overall progress in the course -- a per cent, rounded to 3 digits
         course_progress = 0
@@ -448,13 +459,15 @@ class TeacherDashboardHandler(
         # Progress on each lesson in the coure -- a tuple-index dict:  dict[(unitid,lessonid)] 
         units_lessons_progress = {}
         for unit in units:
-#            logging.debug('***RAM*** unit = ' + str(unit.unit_id))
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** unit = ' + str(unit.unit_id))
             # Don't show assessments that are part of unit
             if course.get_parent_unit(unit.unit_id):
                 continue
             if unit.unit_id in unit_progress_raw:
                 lessons_progress = tracker.get_lesson_progress(student, unit.unit_id, student_progress)
-#                logging.debug('***RAM*** lesson_status = ' + str(lessons_progress))
+                if GLOBAL_DEBUG:
+                    logging.debug('***RAM*** lesson_status = ' + str(lessons_progress))
                 units_lessons_progress[str(unit.unit_id)] = self.calculate_lessons_progress(lessons_progress)
         return {'unit_completion':unit_progress_data, 'course_progress':course_progress, 'lessons_progress': units_lessons_progress }
 
@@ -464,7 +477,8 @@ class TeacherDashboardHandler(
         student = Student.get_first_by_email(student_email)[0]  # returns a tuple
 
         scores = ActivityScoreParser.get_activity_scores([student.user_id], course, True)
-#        logging.debug('***RAM*** get activity scores ' + str(scores))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** get activity scores ' + str(scores))
       
         return scores
 
@@ -510,7 +524,9 @@ class TeacherDashboardHandler(
             index = section.students.split(',')   # comma-delimited emails
         else:
             index = []
-#        logging.debug('***RAM*** students index : ' + str(index))
+
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** students index : ' + str(index))
 
         students = []
         if len(index) > 0:
@@ -545,10 +561,10 @@ class TeacherDashboardHandler(
         # Get students and progress data for this section 
         students = self.create_student_data_table(this_course, course_section, tracker, units_filtered)
 
-#        logging.debug('***RAM*** Units  : ' + str(units_filtered))
-#        logging.debug('***RAM*** Units completed : ' + str())
-#        logging.debug('***RAM*** Lessons : ' + str(lessons))
-#        logging.debug('***RAM*** Students : ' + str(students))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** Units  : ' + str(units_filtered))
+            logging.debug('***RAM*** Lessons : ' + str(lessons))
+            logging.debug('***RAM*** Students : ' + str(students))
 
         user_email = users.get_current_user().email()
         self.template_value['resources_path'] = RESOURCES_PATH
@@ -579,7 +595,8 @@ class TeacherDashboardHandler(
         self.template_value['units'] = units_filtered
         self.template_value['lessons'] =  self.get_lessons_for_roster(units_filtered, this_course)
         student_dict = self.create_student_data_table(this_course, None, tracker, units_filtered, student_email)
-        logging.debug('***RAM*** Student : ' + str(student_dict))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** Student : ' + str(student_dict))
         self.template_value['student'] = student_dict
         self.template_value['studentJs'] = transforms.dumps(student_dict, {}) # for use with javascript
        
@@ -619,7 +636,8 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
             used by the Teacher Dashboard.
         """
 
-        logging.debug('***RAM** get_child_routes')
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM** get_child_routes')
         return [
             (TeacherItemRESTHandler.URL, TeacherItemRESTHandler),
             (SectionItemRESTHandler.URL, SectionItemRESTHandler)
@@ -638,7 +656,8 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
         items = TeacherEntity.get_teachers()
         items = TeacherRights.apply_rights(self, items)
 
-        logging.debug('***RAM**  Trace: get_edit_teachers')
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM**  Trace: get_edit_teachers')
         main_content = self.get_template(
             'mcsp_admin_dashboard.html', [TEMPLATE_DIR]).render({
                 'teachers': self.format_admin_template(items),
@@ -668,7 +687,8 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
                 TeacherItemRESTHandler.URL, key, 'teacher-delete'),
             display_types=schema.get_display_types())
 
-        logging.debug('***RAM** get_edit_teacher rendering page')
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM** get_edit_teacher rendering page')
         self.render_page({
             'main_content': form_html,
             'page_title': 'Edit Teacher',
@@ -680,7 +700,8 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
             self.error(401)
             return
 
-        logging.debug('***RAM** post_delete_teacher')
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM** post_delete_teacher')
         key = self.request.get('key')
         entity = TeacherEntity.get(key)
         if entity:
@@ -693,7 +714,8 @@ class AdminDashboardHandler(TeacherHandlerMixin, dashboard.DashboardHandler):
             self.error(401)
             return
 
-        logging.debug('***RAM** post_add_teacher')
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM** post_add_teacher')
         entity = TeacherEntity.make('', '', '')
         entity.put()
 
@@ -723,7 +745,8 @@ def record_tag_assessment(source, user, data):
 
     if source == 'tag-assessment':
         StudentAnswersEntity.record(user, data)
-#        logging.debug('***RAM*** data = ' + str(data))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** data = ' + str(data))
 
 def notify_module_enabled():
     """Handles things after module has been enabled.

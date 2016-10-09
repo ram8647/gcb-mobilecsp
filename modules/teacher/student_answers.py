@@ -38,6 +38,8 @@ from models import models
 #from models.models import QuestionGroupDAO
 from models.models import MemcacheManager
 
+GLOBAL_DEBUG = False
+
 class StudentAnswersEntity(entities.BaseEntity):
 
     """A class that represents a persistent database entity for student answers."""
@@ -83,12 +85,14 @@ class StudentAnswersEntity(entities.BaseEntity):
         # Try to get the student's data by email key from datastore
         email = user.email()
         key = db.Key.from_path('StudentAnswersEntity', email)
-        logging.debug('***RAM*** email ' + email + ' key = ' + str(key))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** email ' + email + ' key = ' + str(key))
         student = db.get(key)
 
         if student: 
             #  If student (with email key) found
-            logging.warning('***RAM*** existing student key =  ' + email)
+            if GLOBAL_DEBUG:
+                logging.warning('***RAM*** existing student key =  ' + email)
             student.answers_dict = cls.update_answers_dict(student, data, user)
             student.recorded_on = datetime.datetime.now()
             student.put()
@@ -96,16 +100,17 @@ class StudentAnswersEntity(entities.BaseEntity):
             # Try to query the db by email to get student       
             student = cls.get_student_by_email(email, user)
             if student:
-                logging.warning('***RAM*** updating for ' + email)
+                if GLOBAL_DEBUG:
+                    logging.warning('***RAM*** updating for ' + email)
                 student.answers_dict = cls.update_answers_dict(student, data, user)
                 student.recorded_on = datetime.datetime.now()
                 student.put()
             else:           
                 # No student with that email in Db -- create a new Entity
-                logging.warning('***RAM*** creating new ' + email)
+                if GLOBAL_DEBUG:
+                    logging.warning('***RAM*** creating new ' + email)
                 student = cls(key_name = email)
                 dict = cls.update_answers_dict(None, data, user)
-#            logging.debug('***RAM*** student ' + str(dict))
                 student.answers_dict = dict
                 student.user_id = user.user_id()
                 student.email = user.email() 
@@ -113,19 +118,22 @@ class StudentAnswersEntity(entities.BaseEntity):
 
     @classmethod
     def get_student_by_email(cls, email, user):
-        logging.warning('***RAM*** get by email ' + email)
+        if GLOBAL_DEBUG:
+            logging.warning('***RAM*** get by email ' + email)
         
         # Fetch the student by query on the email
         # If no hit, return None which will cause a new Entity
         student = cls.all().filter('email',email).get()
         if not student:
-            logging.warning('***RAM***  no hit for email ' + email)
+            if GLOBAL_DEBUG:
+                logging.warning('***RAM***  no hit for email ' + email)
             return None 
         else:
             # Here were are converting the student's answers entity
             # from using an integer key to using the email as key.
             # THis will make retrievals way more efficient. 
-            logging.warning('***RAM*** creating new ' + email)
+            if GLOBAL_DEBUG:
+                logging.warning('***RAM*** creating new ' + email)
             new_student = cls(key_name = email)
             new_student.answers_dict = student.answers_dict
             new_student.user_id = student.user_id
@@ -141,7 +149,8 @@ class StudentAnswersEntity(entities.BaseEntity):
             return json.dumps(dict)
         else:
             dict = cls.build_dict(None, data, user)  # New student Dict
-#            logging.debug('***RAM*** dict ' + str(dict))
+            if GLOBAL_DEBUG:
+                logging.debug('***RAM*** dict ' + str(dict))
             return json.dumps(dict)
 
     @classmethod
@@ -201,7 +210,8 @@ class StudentAnswersEntity(entities.BaseEntity):
                  }
         if answers == 'true' or answers == 'false':   # Quizly answers, put into an array
             attempt['answers'] = [ answers ]          
-#        logging.debug('***RAM*** Quizly answers = ' + str(answers) + ' a= '  + str(attempt['answers']))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** Quizly answers = ' + str(answers) + ' a= '  + str(attempt['answers']))
         if not answers_dict:
             answers_dict = {}
             lesson = {instance_id: attempt }
@@ -228,9 +238,11 @@ class StudentAnswersEntity(entities.BaseEntity):
     def get_answers_dict_for_student(cls, student):
         """ Retrieve the answers dict for a student. """
         email = student.email
-        logging.warning('***RAM*** get answers dict for student, email = ' + email)
+        if GLOBAL_DEBUG:
+            logging.warning('***RAM*** get answers dict for student, email = ' + email)
         key = db.Key.from_path('StudentAnswersEntity', email)
-        logging.debug('***RAM*** email ' + email + ' key = ' + str(key))
+        if GLOBAL_DEBUG:
+            logging.debug('***RAM*** email ' + email + ' key = ' + str(key))
         student_answers = db.get(key)
         dict = {}
         if student_answers:
