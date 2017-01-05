@@ -1,6 +1,12 @@
 For more information on Course Builder, see the documentation at
 https://www.google.com/edu/openonline/course-builder/docs/1.10/set-up-course-builder/set-up-course-builder.html
 
+
+>>>> To deploy or update, Google now uses gcloud
+>>>> See: https://cloud.google.com/appengine/docs/python/tools/uploadinganapp
+>>>> For example:
+>>>> $ gcloud app deploy app.yaml --project ram8647 --version prod
+
 >>>> To authenticate, needed for ETL, you can use Application Default Credentials
 >>>> (https://developers.google.com/identity/protocols/application-default-credentials). Then you need to:
 
